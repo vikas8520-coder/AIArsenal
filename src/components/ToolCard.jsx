@@ -182,6 +182,33 @@ export default function ToolCard({ tool, selected, onToggle, plannerMode }) {
               style={{ overflow: "hidden" }}
             >
               <div style={{ paddingTop: 10, marginTop: 8, borderTop: "1px solid var(--border)" }}>
+                {/* Detail */}
+                {tool.detail && (
+                  <p style={{
+                    fontSize: 11.5, color: "var(--text-secondary)", margin: "0 0 10px",
+                    lineHeight: 1.55, fontFamily: "monospace",
+                  }}>
+                    {tool.detail}
+                  </p>
+                )}
+
+                {/* Quick Start */}
+                {tool.quickStart && (
+                  <div style={{ marginBottom: 10 }}>
+                    <span style={{ color: accent, fontSize: 8.5, fontFamily: "monospace", letterSpacing: 1.5 }}>
+                      QUICK START
+                    </span>
+                    <p style={{
+                      fontSize: 11, color: "var(--text-default)", margin: "4px 0 0",
+                      lineHeight: 1.55, fontFamily: "monospace",
+                      padding: "8px 10px", background: `${accent}06`,
+                      borderRadius: 6, border: `1px solid ${accent}12`,
+                    }}>
+                      {tool.quickStart}
+                    </p>
+                  </div>
+                )}
+
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 14px", fontSize: 11.5 }}>
                   <div>
                     <span style={{ color: "var(--text-faint)", fontSize: 8.5, fontFamily: "monospace", letterSpacing: 1 }}>FREE TIER</span>
