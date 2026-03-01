@@ -282,8 +282,8 @@ function ThemeToggle({ theme, onToggle, accent }) {
       whileTap={{ scale: 0.85 }}
       style={{
         fontFamily: "monospace", fontSize: 14,
-        background: isLight ? `${accent}18` : "rgba(255,255,255,0.15)",
-        border: `1px solid ${isLight ? accent + "40" : "rgba(255,255,255,0.4)"}`,
+        background: isLight ? `${accent}18` : "rgba(255,255,255,0.22)",
+        border: `1px solid ${isLight ? accent + "40" : "rgba(255,255,255,0.5)"}`,
         borderRadius: 8, padding: "6px 10px", cursor: "pointer",
         color: isLight ? accent : "#ffffff",
         transition: "background 0.2s, border-color 0.2s, color 0.2s",
