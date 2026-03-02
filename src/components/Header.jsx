@@ -106,7 +106,7 @@ function TypewriterSearch({ value, onChange, accent }) {
 export default function Header({
   search, onSearch, filterOSS, onToggleOSS,
   sortBy, onSort, plannerMode, onTogglePlanner,
-  issueMode, onToggleIssue,
+  issueMode, onToggleIssue, onToggleSubmit,
   accent, onOpenPalette, resultCount, theme, onToggleTheme,
 }) {
   const [booted, setBooted] = useState(() => {
@@ -251,6 +251,23 @@ export default function Header({
           }}
         >
           {issueMode ? "✓ SOLVER" : "◈ SOLVE"}
+        </button>
+
+        {/* Submit Tool */}
+        <button
+          onClick={onToggleSubmit}
+          style={{
+            fontFamily: "monospace", fontSize: 10,
+            background: "var(--surface-1)",
+            border: "1px solid var(--border-bright)",
+            borderRadius: 7, padding: "8px 13px", cursor: "pointer",
+            color: "var(--text-muted)",
+            transition: "all 0.15s", whiteSpace: "nowrap",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = accent; e.currentTarget.style.borderColor = `${accent}40`; }}
+          onMouseLeave={e => { e.currentTarget.style.color = ""; e.currentTarget.style.borderColor = ""; }}
+        >
+          + SUBMIT
         </button>
 
         {/* Result count */}

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const CATEGORIES = ["Bug Report", "Tool Suggestion", "Feature Request", "Other"];
-const SHEETS_API = "YOUR_SHEETS_API_URL"; // Replace with your Google Apps Script web app URL
+const FEEDBACK_API = "/api/feedback";
 
 function StarRating({ value, onChange, accent }) {
   const [hover, setHover] = useState(0);
@@ -87,7 +87,7 @@ export default function FeedbackWidget({ accent = "#00f0ff" }) {
   useEffect(() => {
     if (tab !== "wall" || !open) return;
     setLoadingWall(true);
-    fetch(SHEETS_API)
+    fetch(FEEDBACK_API)
       .then((r) => r.json())
       .then((data) => {
         if (data.success) setTestimonials(data.testimonials || []);
@@ -102,7 +102,7 @@ export default function FeedbackWidget({ accent = "#00f0ff" }) {
 
     setStatus("submitting");
     try {
-      const res = await fetch(SHEETS_API, {
+      const res = await fetch(FEEDBACK_API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -117,6 +117,14 @@ export default function FeedbackWidget({ accent = "#00f0ff" }) {
       if (data.success) {
         setStatus("success");
         if (window.plausible) window.plausible("Feedback Submitted", { props: { category, rating } });
+        // Fire-and-forget lead capture
+        if (email.trim()) {
+          fetch("/api/lead", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email.trim(), source: "feedback" }),
+          }).catch(() => {});
+        }
         setTimeout(() => {
           setStatus("idle");
           setCategory("");

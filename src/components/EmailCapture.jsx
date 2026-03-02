@@ -41,6 +41,12 @@ export default function EmailCapture({ accent = "#00f0ff", compact = false }) {
         setStatus("success");
         // Fire Plausible custom event
         if (window.plausible) window.plausible("Email Signup");
+        // Log lead to Airtable (fire-and-forget)
+        fetch("/api/lead", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, source: "email_capture" }),
+        }).catch(() => {});
         try { localStorage.setItem(STORAGE_KEY, "1"); } catch {}
       } else {
         setStatus("error");

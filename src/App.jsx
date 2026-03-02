@@ -15,6 +15,7 @@ import EmailCapture from "./components/EmailCapture";
 import PlannerPanel from "./components/PlannerPanel";
 import IssueSolver from "./components/IssueSolver";
 import FeedbackWidget from "./components/FeedbackWidget";
+import ToolSubmitForm from "./components/ToolSubmitForm";
 
 // Group tools by subcategory, sponsored tools float to top
 function groupBySubcategory(tools) {
@@ -38,6 +39,7 @@ export default function App() {
   const [issueMode, setIssueMode] = useState(false);
   const [selected, setSelected] = useState(new Set());
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [submitOpen, setSubmitOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [theme, setTheme] = useState(() => {
     try { return localStorage.getItem("nexus-theme") || "dark"; } catch { return "dark"; }
@@ -168,6 +170,7 @@ export default function App() {
           onTogglePlanner={() => setPlannerMode((v) => !v)}
           issueMode={issueMode}
           onToggleIssue={() => setIssueMode((v) => !v)}
+          onToggleSubmit={() => setSubmitOpen(true)}
           accent={activeCatObj.color}
           onOpenPalette={() => setPaletteOpen(true)}
           resultCount={filtered.length}
@@ -285,6 +288,13 @@ export default function App() {
 
       {/* Feedback Widget */}
       <FeedbackWidget accent={activeCatObj.color} />
+
+      {/* Tool Submit Form */}
+      <ToolSubmitForm
+        open={submitOpen}
+        onClose={() => setSubmitOpen(false)}
+        accent={activeCatObj.color}
+      />
 
       {/* Command Palette */}
       <CommandPalette
