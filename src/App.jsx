@@ -172,6 +172,7 @@ export default function App() {
           tools={TOOLS}
           selected={selected}
           onSelectStack={toggleTool}
+          onSelectCategory={handleCategorySelect}
         />
 
         {/* Scrollable content */}

@@ -31,6 +31,7 @@ export default function Header({
   sortBy, onSort, onToggleSubmit,
   accent, onOpenPalette, resultCount, theme, onToggleTheme,
   onSelectTool, tools, selected, onSelectStack,
+  onSelectCategory,
 }) {
   const [booted, setBooted] = useState(() => {
     try { return !!localStorage.getItem("nexus-booted"); } catch { return false; }
@@ -114,6 +115,9 @@ export default function Header({
           tools={tools}
           selected={selected}
           onSelectStack={onSelectStack}
+          filterOSS={filterOSS}
+          onToggleOSS={onToggleOSS}
+          onSelectCategory={onSelectCategory}
         />
 
         {/* ⌘K pill */}
