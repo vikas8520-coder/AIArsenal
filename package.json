@@ -6,19 +6,21 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "embeddings": "node scripts/generate-embeddings.mjs"
   },
   "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
+    "clsx": "^2.1.1",
+    "cmdk": "^1.0.4",
+    "framer-motion": "^11.15.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "framer-motion": "^11.15.0",
-    "cmdk": "^1.0.4",
-    "clsx": "^2.1.1",
     "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.4",
     "@tailwindcss/vite": "^4.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
     "tailwindcss": "^4.0.0",
     "vite": "^6.0.0"
   }

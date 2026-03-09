@@ -1,16 +1,17 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TOOLS } from "../data/tools";
 import { PAID_TOOLS, BUDGET_BLUEPRINTS, COST_STRATEGIES } from "../data/paid-tools";
 import { searchTools } from "../hooks/useSearch";
+import { useSemanticSearch, isSemanticQuery } from "../hooks/useSemanticSearch";
 import { getCategoryById } from "../data/categories";
 
 const TYPEWRITER_PHRASES = [
   "Search 215+ tools...",
   "Try: local llm...",
   "Try: free gpu compute...",
-  "Try: I need a cheap GPT-4 alternative...",
-  "Try: build a telegram bot...",
+  "Ask: What are alternatives to Gemini?",
+  "Ask: best free coding assistant?",
   "Try: video generation...",
 ];
 
@@ -25,6 +26,12 @@ const STOP_WORDS = new Set([
 function isDescriptiveQuery(q) {
   const words = q.trim().split(/\s+/).filter(w => w.length > 2 && !STOP_WORDS.has(w.toLowerCase()));
   return words.length >= 3 || q.length >= 30;
+}
+
+// ── Complex query detection (needs Gemini, not just embeddings) ─────────────
+function isComplexQuery(q) {
+  return /\b(compare|versus|vs|budget|plan|stack|architecture|workflow)\b/i.test(q)
+    && isDescriptiveQuery(q);
 }
 
 function buildPlannerPrompt(description) {
@@ -68,10 +75,20 @@ Respond ONLY with valid JSON (no backticks, no markdown):
 Recommend 5-12 tools. Prioritize free tiers. Include cost optimization tools when relevant. Only use tool IDs from the list.`;
 }
 
-function buildSolverPrompt(desc) {
-  const preFiltered = searchTools(TOOLS, desc).slice(0, 40);
+function buildSolverPrompt(desc, semanticHints) {
+  // Use semantic results as pre-filter when available
+  let preFiltered;
+  if (semanticHints && semanticHints.length > 0) {
+    const hintIds = new Set(semanticHints.map((h) => h.tool.id));
+    const fromSemantic = semanticHints.map((h) => h.tool);
+    const fromKeyword = searchTools(TOOLS, desc).filter((t) => !hintIds.has(t.id));
+    preFiltered = [...fromSemantic, ...fromKeyword].slice(0, 40);
+  } else {
+    preFiltered = searchTools(TOOLS, desc).slice(0, 40);
+  }
+
   const toolList = preFiltered
-    .map((t) => `ID:${t.id} | ${t.name} | ${t.category} | ${t.desc}`)
+    .map((t) => `ID:${t.id} | ${t.name} | ${t.category} | ${t.desc}. Free: ${t.free}`)
     .join("\n");
 
   return `You are a tool recommendation engine for AIArsenal (${TOOLS.length}+ AI tools).
@@ -79,10 +96,11 @@ function buildSolverPrompt(desc) {
 TOOLS (pre-filtered, most relevant):
 ${toolList}
 
-USER PROBLEM: ${desc}
+USER QUESTION: ${desc}
 
-Respond ONLY with valid JSON (no backticks, no markdown): {"tools":[{"id":"exact_id","reason":"one sentence why this solves the problem"}]}
-Suggest 4-8 tools. Only use IDs from the list above.`;
+Respond ONLY with valid JSON (no backticks, no markdown):
+{"answer":"A direct 2-3 sentence answer to the user's question","tools":[{"id":"exact_id","reason":"one sentence why this fits"}]}
+Answer the question first, then suggest 4-8 relevant tools. Only use IDs from the list above.`;
 }
 
 function instantMatch(query) {
@@ -114,7 +132,22 @@ async function callAI(prompt) {
   return JSON.parse(match[0]);
 }
 
-function ToolResultCard({ tool, reason, accent, onClick }) {
+// ── Score badge for semantic results ────────────────────────────────────────
+function ScoreBadge({ score }) {
+  const pct = Math.round(score * 100);
+  const color = pct >= 60 ? "#10b981" : pct >= 40 ? "#eab308" : "var(--text-faint)";
+  return (
+    <span style={{
+      fontSize: 8, fontFamily: "monospace", color,
+      border: `1px solid ${color}30`, borderRadius: 3,
+      padding: "0 4px", whiteSpace: "nowrap",
+    }}>
+      {pct}%
+    </span>
+  );
+}
+
+function ToolResultCard({ tool, reason, accent, onClick, score }) {
   const cat = getCategoryById(tool.category);
   const color = cat?.color || accent;
   return (
@@ -138,12 +171,20 @@ function ToolResultCard({ tool, reason, accent, onClick }) {
     >
       <span style={{ color, fontFamily: "monospace", flexShrink: 0, marginTop: 1 }}>◈</span>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontFamily: "monospace", fontWeight: 700, fontSize: 12, color: "var(--text-strong)" }}>
-          {tool.name}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: 12, color: "var(--text-strong)" }}>
+            {tool.name}
+          </span>
+          {score != null && <ScoreBadge score={score} />}
         </div>
         <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2, lineHeight: 1.4 }}>
           {reason || tool.desc}
         </div>
+        {tool.free && (
+          <div style={{ fontSize: 10, color: "#10b981", marginTop: 3, fontFamily: "monospace" }}>
+            {tool.free}
+          </div>
+        )}
       </div>
       <span style={{
         fontSize: 9, color, border: `1px solid ${color}25`,
@@ -165,8 +206,12 @@ export default function SmartSearch({ value, onChange, accent, onSelectTool, too
   const [loading, setLoading] = useState(false);
   const [aiResults, setAiResults] = useState(null);
   const [error, setError] = useState(null);
-  const [mode, setMode] = useState(null); // "instant" | "plan" | "solve"
+  const [mode, setMode] = useState(null); // "instant" | "semantic" | "plan" | "solve"
   const containerRef = useRef(null);
+  const debounceRef = useRef(null);
+
+  // Semantic search hook
+  const { search: semanticSearch, status: semanticStatus } = useSemanticSearch();
 
   // Typewriter
   useEffect(() => {
@@ -209,7 +254,61 @@ export default function SmartSearch({ value, onChange, accent, onSelectTool, too
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // ── Auto-trigger semantic search on question-like queries ─────────────────
+  const runSemantic = useCallback(async (query) => {
+    if (!query.trim() || semanticStatus !== "ready") return;
+
+    setMode("semantic");
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { results, ready, error: searchError } = await semanticSearch(query, {
+        topK: 8,
+        minScore: 0.2,
+      });
+
+      if (searchError) {
+        setError(searchError);
+        return;
+      }
+
+      // Add score-based reasons
+      const withReasons = results.map(({ tool, score }) => ({
+        tool,
+        score,
+        reason: tool.free || tool.desc,
+      }));
+
+      setAiResults({ type: "semantic", tools: withReasons });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [semanticSearch, semanticStatus]);
+
+  // Debounced auto-semantic search when typing a question
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (!value.trim() || !isSemanticQuery(value)) return;
+    if (mode === "solve" || mode === "plan") return; // Don't override AI modes
+
+    debounceRef.current = setTimeout(() => {
+      if (semanticStatus === "ready") {
+        runSemantic(value);
+      }
+    }, 400);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [value, semanticStatus, runSemantic, mode]);
+
   const isLong = isDescriptiveQuery(value);
+  const isSemantic = isSemanticQuery(value);
+  const showDeepDive = isSemantic && aiResults?.type === "semantic" && aiResults.tools.length < 4;
 
   const runInstant = () => {
     if (!value.trim()) return;
@@ -226,11 +325,13 @@ export default function SmartSearch({ value, onChange, accent, onSelectTool, too
     setLoading(true);
     setAiResults(null);
     try {
-      const parsed = await callAI(buildSolverPrompt(value));
+      // Pass semantic hints to improve AI pre-filtering
+      const semanticHints = aiResults?.type === "semantic" ? aiResults.tools : [];
+      const parsed = await callAI(buildSolverPrompt(value, semanticHints));
       const results = (parsed.tools || [])
         .map(({ id, reason }) => ({ tool: TOOLS.find((t) => t.id === id), reason }))
         .filter((r) => r.tool);
-      setAiResults({ type: "solve", tools: results });
+      setAiResults({ type: "solve", tools: results, answer: parsed.answer });
     } catch (e) {
       setError(e.message);
     } finally {
@@ -258,14 +359,23 @@ export default function SmartSearch({ value, onChange, accent, onSelectTool, too
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && e.metaKey) {
+    if (e.key === "Enter") {
       e.preventDefault();
-      if (isLong) runSolve();
-      else runInstant();
+      if (e.metaKey || e.ctrlKey) {
+        // ⌘↵ = AI deep dive
+        runSolve();
+      } else if (isSemantic && semanticStatus === "ready") {
+        // Enter on a question = semantic search
+        runSemantic(value);
+      } else {
+        runInstant();
+      }
     }
   };
 
-  const showDropdown = (isLong && focused && value.trim()) || aiResults || loading || error;
+  const showDropdown =
+    aiResults || loading || error ||
+    (focused && value.trim() && (isLong || isSemantic));
 
   return (
     <div ref={containerRef} style={{ position: "relative", flex: 1 }}>
@@ -280,8 +390,11 @@ export default function SmartSearch({ value, onChange, accent, onSelectTool, too
           value={value}
           onChange={(e) => {
             onChange(e.target.value);
-            setAiResults(null);
-            setMode(null);
+            // Only clear AI/solve results, not semantic (it auto-triggers)
+            if (mode === "solve" || mode === "plan") {
+              setAiResults(null);
+              setMode(null);
+            }
             setError(null);
           }}
           onFocus={(e) => {
@@ -296,7 +409,7 @@ export default function SmartSearch({ value, onChange, accent, onSelectTool, too
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          aria-label="Search tools or describe your project"
+          aria-label="Search tools or ask a question"
           role="searchbox"
           style={{
             width: "100%", padding: "10px 14px 10px 36px",
@@ -309,6 +422,25 @@ export default function SmartSearch({ value, onChange, accent, onSelectTool, too
             boxSizing: "border-box",
           }}
         />
+        {/* Semantic status indicator */}
+        {semanticStatus === "loading" && (
+          <span style={{
+            position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+            fontSize: 9, fontFamily: "monospace", color: "var(--text-faint)",
+          }}>
+            <motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }}>
+              loading model...
+            </motion.span>
+          </span>
+        )}
+        {semanticStatus === "ready" && isSemantic && !showDropdown && (
+          <span style={{
+            position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+            fontSize: 9, fontFamily: "monospace", color: "#10b981",
+          }}>
+            semantic
+          </span>
+        )}
       </div>
 
       {/* Dropdown */}
@@ -327,15 +459,15 @@ export default function SmartSearch({ value, onChange, accent, onSelectTool, too
               borderRadius: "0 0 10px 10px",
               padding: "10px 12px",
               zIndex: 50,
-              maxHeight: 420,
+              maxHeight: 480,
               overflowY: "auto",
               backdropFilter: "blur(20px)",
               boxShadow: "0 12px 40px rgba(0,0,0,0.3)",
             }}
             className="no-scrollbar"
           >
-            {/* AI action buttons — show when query is descriptive */}
-            {!loading && !aiResults && !error && isLong && (
+            {/* Action buttons — show for descriptive queries */}
+            {!loading && !error && (mode !== "solve" && mode !== "plan") && isLong && (
               <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
                 <button
                   onClick={runSolve}
@@ -346,7 +478,7 @@ export default function SmartSearch({ value, onChange, accent, onSelectTool, too
                     transition: "all 0.15s", flex: 1,
                   }}
                 >
-                  ⚡ Find Tools
+                  ⚡ AI Deep Dive
                 </button>
                 <button
                   onClick={runPlan}
@@ -372,7 +504,7 @@ export default function SmartSearch({ value, onChange, accent, onSelectTool, too
                   animate={{ opacity: [0.4, 1, 0.4] }}
                   transition={{ duration: 1.2, repeat: Infinity }}
                 >
-                  {mode === "plan" ? "Planning stack..." : "Finding tools..."}
+                  {mode === "plan" ? "Planning stack..." : mode === "semantic" ? "Searching semantically..." : "Finding tools..."}
                 </motion.span>
               </div>
             )}
@@ -384,12 +516,109 @@ export default function SmartSearch({ value, onChange, accent, onSelectTool, too
               </div>
             )}
 
-            {/* Solve / Instant results */}
-            {aiResults && (aiResults.type === "solve" || aiResults.type === "instant") && (
+            {/* Semantic results */}
+            {aiResults && aiResults.type === "semantic" && (
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                  <span style={{ fontSize: 9, fontFamily: "monospace", letterSpacing: 1.5, color: "#10b981" }}>
+                    SEMANTIC MATCH
+                  </span>
+                  <span style={{
+                    fontSize: 9, fontFamily: "monospace",
+                    background: "rgba(16,185,129,0.1)", color: "#10b981",
+                    border: "1px solid rgba(16,185,129,0.25)", borderRadius: 3, padding: "0 5px",
+                  }}>
+                    {aiResults.tools.length}
+                  </span>
+                  <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {aiResults.tools.map(({ tool, reason, score }) => (
+                    <ToolResultCard
+                      key={tool.id}
+                      tool={tool}
+                      reason={reason}
+                      score={score}
+                      accent={accent}
+                      onClick={onSelectTool}
+                    />
+                  ))}
+                </div>
+                {aiResults.tools.length === 0 && (
+                  <div style={{ textAlign: "center", padding: "12px 0", fontFamily: "monospace", fontSize: 11, color: "var(--text-faint)" }}>
+                    No semantic matches. Try ⌘↵ for AI-powered search.
+                  </div>
+                )}
+                {/* Offer deep dive if few results */}
+                {showDeepDive && (
+                  <button
+                    onClick={runSolve}
+                    style={{
+                      width: "100%", marginTop: 8, fontFamily: "monospace", fontSize: 10,
+                      padding: "8px 12px", background: `${accent}10`,
+                      border: `1px solid ${accent}25`, borderRadius: 6,
+                      cursor: "pointer", color: accent, transition: "all 0.15s",
+                    }}
+                  >
+                    ⚡ Not enough results? Try AI Deep Dive (⌘↵)
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Solve results (AI) */}
+            {aiResults && aiResults.type === "solve" && (
+              <div>
+                {/* AI answer */}
+                {aiResults.answer && (
+                  <div style={{
+                    padding: "10px 12px", marginBottom: 10,
+                    background: `${accent}08`, border: `1px solid ${accent}20`,
+                    borderRadius: 8,
+                  }}>
+                    <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, color: "var(--text-strong)", fontFamily: "monospace" }}>
+                      {aiResults.answer}
+                    </p>
+                  </div>
+                )}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                  <span style={{ fontSize: 9, fontFamily: "monospace", letterSpacing: 1.5, color: "var(--text-faint)" }}>
+                    AI RECOMMENDATIONS
+                  </span>
+                  <span style={{
+                    fontSize: 9, fontFamily: "monospace",
+                    background: `${accent}12`, color: accent,
+                    border: `1px solid ${accent}25`, borderRadius: 3, padding: "0 5px",
+                  }}>
+                    {aiResults.tools.length}
+                  </span>
+                  <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {aiResults.tools.map(({ tool, reason }) => (
+                    <ToolResultCard
+                      key={tool.id}
+                      tool={tool}
+                      reason={reason}
+                      accent={accent}
+                      onClick={onSelectTool}
+                    />
+                  ))}
+                </div>
+                {aiResults.tools.length === 0 && (
+                  <div style={{ textAlign: "center", padding: "12px 0", fontFamily: "monospace", fontSize: 11, color: "var(--text-faint)" }}>
+                    No results found. Try different keywords.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Instant results */}
+            {aiResults && aiResults.type === "instant" && (
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                   <span style={{ fontSize: 9, fontFamily: "monospace", letterSpacing: 1.5, color: "var(--text-faint)" }}>
-                    {aiResults.type === "instant" ? "INSTANT MATCH" : "AI RECOMMENDATIONS"}
+                    INSTANT MATCH
                   </span>
                   <span style={{
                     fontSize: 9, fontFamily: "monospace",
@@ -435,11 +664,11 @@ export default function SmartSearch({ value, onChange, accent, onSelectTool, too
                   </p>
                   {aiResults.plan.budget_tip && (
                     <p style={{ fontSize: 10, color: "#eab308", margin: "0 0 4px", fontFamily: "monospace" }}>
-                      💡 {aiResults.plan.budget_tip}
+                      {aiResults.plan.budget_tip}
                     </p>
                   )}
                   <p style={{ fontFamily: "monospace", fontSize: 10, color: "#76ff03", margin: 0 }}>
-                    💰 {aiResults.plan.estimated_monthly_cost}
+                    {aiResults.plan.estimated_monthly_cost}
                   </p>
                 </div>
 
