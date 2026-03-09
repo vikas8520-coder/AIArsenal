@@ -1,15 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { STATS } from "../data/tools";
-
-const TYPEWRITER_PHRASES = [
-  "Search 215+ tools...",
-  "Try: local llm...",
-  "Try: free gpu compute...",
-  "Try: rlhf income...",
-  "Try: personal ai daemon...",
-  "Try: vector database...",
-];
+import SmartSearch from "./SmartSearch";
 
 function AnimatedCounter({ target, duration = 1200 }) {
   const [val, setVal] = useState(0);
@@ -34,80 +26,11 @@ function AnimatedCounter({ target, duration = 1200 }) {
   return <>{val}</>;
 }
 
-function TypewriterSearch({ value, onChange, accent }) {
-  const [placeholder, setPlaceholder] = useState("");
-  const phraseIdx = useRef(0);
-  const charIdx = useRef(0);
-  const deleting = useRef(false);
-
-  useEffect(() => {
-    if (value) return; // Don't animate when user is typing
-
-    const tick = () => {
-      const phrase = TYPEWRITER_PHRASES[phraseIdx.current];
-      if (!deleting.current) {
-        if (charIdx.current < phrase.length) {
-          charIdx.current++;
-          setPlaceholder(phrase.slice(0, charIdx.current));
-          return setTimeout(tick, 55);
-        }
-        deleting.current = true;
-        return setTimeout(tick, 1800);
-      } else {
-        if (charIdx.current > 0) {
-          charIdx.current--;
-          setPlaceholder(phrase.slice(0, charIdx.current));
-          return setTimeout(tick, 30);
-        }
-        deleting.current = false;
-        phraseIdx.current = (phraseIdx.current + 1) % TYPEWRITER_PHRASES.length;
-        return setTimeout(tick, 400);
-      }
-    };
-    const t = setTimeout(tick, 800);
-    return () => clearTimeout(t);
-  }, [value]);
-
-  return (
-    <div style={{ position: "relative", flex: 1 }}>
-      <span style={{
-        position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)",
-        fontSize: 13, color: accent, opacity: 0.5,
-      }}>⌕</span>
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        aria-label="Search tools"
-        role="searchbox"
-        style={{
-          width: "100%", padding: "10px 14px 10px 36px",
-          background: "var(--surface-1)",
-          border: "1px solid var(--border-bright)",
-          borderRadius: 10, color: "var(--text-strong)", fontSize: 13,
-          fontFamily: "monospace", outline: "none",
-          transition: "border-color 0.15s, box-shadow 0.15s",
-          boxSizing: "border-box",
-        }}
-        onFocus={e => {
-          e.target.style.borderColor = `${accent}40`;
-          e.target.style.boxShadow = `0 0 0 3px ${accent}10`;
-        }}
-        onBlur={e => {
-          e.target.style.borderColor = "var(--border-bright)";
-          e.target.style.boxShadow = "none";
-        }}
-      />
-    </div>
-  );
-}
-
 export default function Header({
   search, onSearch, filterOSS, onToggleOSS,
-  sortBy, onSort, plannerMode, onTogglePlanner,
-  issueMode, onToggleIssue, onToggleSubmit,
+  sortBy, onSort, onToggleSubmit,
   accent, onOpenPalette, resultCount, theme, onToggleTheme,
+  onSelectTool, tools, selected, onSelectStack,
 }) {
   const [booted, setBooted] = useState(() => {
     try { return !!localStorage.getItem("nexus-booted"); } catch { return false; }
@@ -183,7 +106,15 @@ export default function Header({
 
       {/* Controls row */}
       <div className="header-controls" style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        <TypewriterSearch value={search} onChange={onSearch} accent={accent} />
+        <SmartSearch
+          value={search}
+          onChange={onSearch}
+          accent={accent}
+          onSelectTool={onSelectTool}
+          tools={tools}
+          selected={selected}
+          onSelectStack={onSelectStack}
+        />
 
         {/* ⌘K pill */}
         <button
@@ -224,36 +155,6 @@ export default function Header({
           <option value="category">Category</option>
           <option value="company">Company</option>
         </select>
-
-        {/* Planner mode */}
-        <button
-          onClick={onTogglePlanner}
-          style={{
-            fontFamily: "monospace", fontSize: 10,
-            background: plannerMode ? `${accent}20` : "var(--surface-1)",
-            border: `1px solid ${plannerMode ? accent + "40" : "var(--border-bright)"}`,
-            borderRadius: 7, padding: "8px 13px", cursor: "pointer",
-            color: plannerMode ? accent : "var(--text-muted)",
-            transition: "all 0.15s", whiteSpace: "nowrap",
-          }}
-        >
-          {plannerMode ? "✓ PLANNER" : "AI PLANNER"}
-        </button>
-
-        {/* Issue Solver */}
-        <button
-          onClick={onToggleIssue}
-          style={{
-            fontFamily: "monospace", fontSize: 10,
-            background: issueMode ? `${accent}20` : "var(--surface-1)",
-            border: `1px solid ${issueMode ? accent + "40" : "var(--border-bright)"}`,
-            borderRadius: 7, padding: "8px 13px", cursor: "pointer",
-            color: issueMode ? accent : "var(--text-muted)",
-            transition: "all 0.15s", whiteSpace: "nowrap",
-          }}
-        >
-          {issueMode ? "✓ SOLVER" : "◈ SOLVE"}
-        </button>
 
         {/* Submit Tool */}
         <button

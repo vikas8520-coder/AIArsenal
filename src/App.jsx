@@ -12,8 +12,6 @@ import CategoryHero from "./components/CategoryHero";
 import Spotlight from "./components/Spotlight";
 import EmptyState from "./components/EmptyState";
 import EmailCapture from "./components/EmailCapture";
-import PlannerPanel from "./components/PlannerPanel";
-import IssueSolver from "./components/IssueSolver";
 import FeedbackWidget from "./components/FeedbackWidget";
 import ToolSubmitForm from "./components/ToolSubmitForm";
 
@@ -35,8 +33,6 @@ export default function App() {
   const [activeCat, setActiveCat] = useState("all");
   const [filterOSS, setFilterOSS] = useState(false);
   const [sortBy, setSortBy] = useState("name");
-  const [plannerMode, setPlannerMode] = useState(false);
-  const [issueMode, setIssueMode] = useState(false);
   const [selected, setSelected] = useState(new Set());
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [submitOpen, setSubmitOpen] = useState(false);
@@ -166,16 +162,16 @@ export default function App() {
           onToggleOSS={() => setFilterOSS((v) => !v)}
           sortBy={sortBy}
           onSort={setSortBy}
-          plannerMode={plannerMode}
-          onTogglePlanner={() => setPlannerMode((v) => !v)}
-          issueMode={issueMode}
-          onToggleIssue={() => setIssueMode((v) => !v)}
           onToggleSubmit={() => setSubmitOpen(true)}
           accent={activeCatObj.color}
           onOpenPalette={() => setPaletteOpen(true)}
           resultCount={filtered.length}
           theme={theme}
           onToggleTheme={() => setTheme((v) => (v === "dark" ? "light" : "dark"))}
+          onSelectTool={(tool) => handleCategorySelect(tool.category)}
+          tools={TOOLS}
+          selected={selected}
+          onSelectStack={toggleTool}
         />
 
         {/* Scrollable content */}
@@ -183,29 +179,6 @@ export default function App() {
           style={{ flex: 1, overflowY: "auto", padding: "20px 20px 40px" }}
           aria-label="Tool library"
         >
-          {/* Issue Solver Panel */}
-          <AnimatePresence>
-            {issueMode && (
-              <IssueSolver
-                accent={activeCatObj.color}
-                onSelectTool={(tool) => handleCategorySelect(tool.category)}
-              />
-            )}
-          </AnimatePresence>
-
-          {/* Planner Panel */}
-          <AnimatePresence>
-            {plannerMode && (
-              <PlannerPanel
-                tools={TOOLS}
-                selected={selected}
-                onSelect={toggleTool}
-                plannerMode={plannerMode}
-                accent={activeCatObj.color}
-              />
-            )}
-          </AnimatePresence>
-
           {/* Category Hero */}
           <CategoryHero cat={activeCatObj} filteredCount={filtered.length} />
 
