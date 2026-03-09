@@ -247,7 +247,7 @@ export default function App() {
                           tool={tool}
                           selected={selected.has(tool.id)}
                           onToggle={toggleTool}
-                          plannerMode={plannerMode}
+                          plannerMode={false}
                         />
                       </motion.div>
                     ))}
