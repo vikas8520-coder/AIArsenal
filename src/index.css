@@ -189,6 +189,12 @@ body {
   transition: opacity 0.3s;
 }
 .card-glow-container:hover .card-glow { opacity: 1; }
+.card-glow-container:hover .compare-btn { opacity: 1 !important; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
 
 /* ── Sidebar transition ── */
 .sidebar-expand {

@@ -14,7 +14,6 @@ function AnimatedCounter({ target, duration = 1200 }) {
     const tick = () => {
       const elapsed = Date.now() - start;
       const progress = Math.min(elapsed / duration, 1);
-      // Ease out
       const eased = 1 - Math.pow(1 - progress, 3);
       setVal(Math.floor(eased * target));
       if (progress < 1) requestAnimationFrame(tick);
@@ -32,6 +31,9 @@ export default function Header({
   accent, onOpenPalette, resultCount, theme, onToggleTheme,
   onSelectTool, tools, selected, onSelectStack,
   onSelectCategory,
+  bookmarkCount, onOpenStack,
+  onOpenShare, hasSelected,
+  onOpenCalc,
 }) {
   const [booted, setBooted] = useState(() => {
     try { return !!localStorage.getItem("nexus-booted"); } catch { return false; }
@@ -48,6 +50,16 @@ export default function Header({
     }, 600);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
+
+  const pillStyle = {
+    fontFamily: "monospace", fontSize: 10,
+    background: "var(--surface-1)", border: "1px solid var(--border-bright)",
+    borderRadius: 7, padding: "9px 12px", cursor: "pointer",
+    color: "var(--text-muted)", transition: "all 0.15s", whiteSpace: "nowrap",
+  };
+
+  const hoverOn = (e) => { e.currentTarget.style.color = accent; e.currentTarget.style.borderColor = `${accent}40`; };
+  const hoverOff = (e) => { e.currentTarget.style.color = ""; e.currentTarget.style.borderColor = ""; };
 
   return (
     <header className="header-mobile" style={{
@@ -125,19 +137,55 @@ export default function Header({
           onClick={onOpenPalette}
           title="Command palette (⌘K)"
           className="hide-mobile"
-          style={{
-            fontFamily: "monospace", fontSize: 10,
-            background: "var(--surface-1)", border: "1px solid var(--border-bright)",
-            borderRadius: 7, padding: "9px 12px", cursor: "pointer",
-            color: "var(--text-muted)", transition: "all 0.15s", whiteSpace: "nowrap",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.color = accent; e.currentTarget.style.borderColor = `${accent}40`; }}
-          onMouseLeave={e => { e.currentTarget.style.color = ""; e.currentTarget.style.borderColor = ""; }}
+          style={pillStyle}
+          onMouseEnter={hoverOn}
+          onMouseLeave={hoverOff}
         >
           ⌘K
         </button>
 
-        {/* Theme toggle — sun/moon */}
+        {/* My Stack */}
+        <button
+          onClick={onOpenStack}
+          title="My saved tools"
+          className="hide-mobile"
+          style={{
+            ...pillStyle,
+            color: bookmarkCount > 0 ? "#eab308" : "var(--text-muted)",
+            borderColor: bookmarkCount > 0 ? "rgba(234,179,8,0.25)" : "var(--border-bright)",
+          }}
+          onMouseEnter={hoverOn}
+          onMouseLeave={hoverOff}
+        >
+          ★ STACK{bookmarkCount > 0 ? ` (${bookmarkCount})` : ""}
+        </button>
+
+        {/* Share — only when tools are selected */}
+        {hasSelected && (
+          <button
+            onClick={onOpenShare}
+            className="hide-mobile"
+            style={pillStyle}
+            onMouseEnter={hoverOn}
+            onMouseLeave={hoverOff}
+          >
+            SHARE
+          </button>
+        )}
+
+        {/* Budget */}
+        <button
+          onClick={onOpenCalc}
+          title="Budget calculator"
+          className="hide-mobile"
+          style={pillStyle}
+          onMouseEnter={hoverOn}
+          onMouseLeave={hoverOff}
+        >
+          BUDGET
+        </button>
+
+        {/* Theme toggle */}
         <ThemeToggle theme={theme} onToggle={onToggleTheme} accent={accent} />
 
         {/* OSS filter */}
@@ -156,6 +204,7 @@ export default function Header({
           }}
         >
           <option value="name">A–Z</option>
+          <option value="newest">Newest</option>
           <option value="category">Category</option>
           <option value="company">Company</option>
         </select>
@@ -164,16 +213,9 @@ export default function Header({
         <button
           onClick={onToggleSubmit}
           className="hide-mobile"
-          style={{
-            fontFamily: "monospace", fontSize: 10,
-            background: "var(--surface-1)",
-            border: "1px solid var(--border-bright)",
-            borderRadius: 7, padding: "8px 13px", cursor: "pointer",
-            color: "var(--text-muted)",
-            transition: "all 0.15s", whiteSpace: "nowrap",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.color = accent; e.currentTarget.style.borderColor = `${accent}40`; }}
-          onMouseLeave={e => { e.currentTarget.style.color = ""; e.currentTarget.style.borderColor = ""; }}
+          style={pillStyle}
+          onMouseEnter={hoverOn}
+          onMouseLeave={hoverOff}
         >
           + SUBMIT
         </button>
@@ -235,8 +277,7 @@ function OSSToggle({ active, onToggle, accent }) {
 
   const handleToggle = () => {
     onToggle();
-    if (active) return; // Only burst when turning ON
-    // Confetti burst
+    if (active) return;
     const container = containerRef.current;
     if (!container) return;
     for (let i = 0; i < 12; i++) {

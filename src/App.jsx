@@ -3,6 +3,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { TOOLS } from "./data/tools";
 import { searchTools } from "./hooks/useSearch";
 import { CATEGORIES, getCategoryById } from "./data/categories";
+import useBookmarks from "./hooks/useBookmarks";
+import { decodeStack } from "./utils/stackUrl";
 import AmbientBackground from "./components/AmbientBackground";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
@@ -14,6 +16,10 @@ import EmptyState from "./components/EmptyState";
 import EmailCapture from "./components/EmailCapture";
 import FeedbackWidget from "./components/FeedbackWidget";
 import ToolSubmitForm from "./components/ToolSubmitForm";
+import MyStack from "./components/MyStack";
+import ComparisonMatrix from "./components/ComparisonMatrix";
+import SharePanel from "./components/SharePanel";
+import CostCalculator from "./components/CostCalculator";
 
 // Group tools by subcategory, sponsored tools float to top
 function groupBySubcategory(tools) {
@@ -41,8 +47,29 @@ export default function App() {
     try { return localStorage.getItem("nexus-theme") || "dark"; } catch { return "dark"; }
   });
 
+  // New feature state
+  const [stackOpen, setStackOpen] = useState(false);
+  const [compareSet, setCompareSet] = useState(new Set());
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [calcOpen, setCalcOpen] = useState(false);
+
+  // Bookmarks hook
+  const { bookmarks, toggle: toggleBookmark, isBookmarked, count: bookmarkCount, bookmarkedTools, exportMarkdown, clearAll: clearBookmarks } = useBookmarks();
+
   // Derive active category object
   const activeCatObj = getCategoryById(activeCat);
+
+  // Restore shared stack from URL hash on mount
+  useEffect(() => {
+    const ids = decodeStack(window.location.hash);
+    if (ids.length > 0) {
+      const validIds = ids.filter((id) => TOOLS.some((t) => t.id === id));
+      if (validIds.length > 0) {
+        setSelected(new Set(validIds));
+      }
+    }
+  }, []);
 
   // Apply data-theme attribute to <html>
   useEffect(() => {
@@ -72,7 +99,6 @@ export default function App() {
         e.preventDefault();
         setPaletteOpen((v) => !v);
       }
-      // O for OSS toggle (when not in input)
       if (e.key === "o" && e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA") {
         setFilterOSS((v) => !v);
       }
@@ -81,7 +107,7 @@ export default function App() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  // Filter + sort (search uses scored ranking; sort only applies when no query)
+  // Filter + sort
   const filtered = useMemo(() => {
     let list = activeCat === "all" ? TOOLS : TOOLS.filter((t) => t.category === activeCat);
     if (filterOSS) list = list.filter((t) => t.oss);
@@ -91,9 +117,17 @@ export default function App() {
       if (sortBy === "name") list = [...list].sort((a, b) => a.name.localeCompare(b.name));
       else if (sortBy === "category") list = [...list].sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
       else if (sortBy === "company") list = [...list].sort((a, b) => a.company.localeCompare(b.company));
+      else if (sortBy === "newest") list = [...list].sort((a, b) => (b.dateAdded || "").localeCompare(a.dateAdded || ""));
     }
     return list;
   }, [activeCat, filterOSS, search, sortBy]);
+
+  // Recently added tools (top 8 by date)
+  const recentTools = useMemo(() => {
+    return [...TOOLS]
+      .sort((a, b) => (b.dateAdded || "").localeCompare(a.dateAdded || ""))
+      .slice(0, 8);
+  }, []);
 
   // Tool counts per category for sidebar
   const toolCounts = useMemo(() => {
@@ -117,6 +151,19 @@ export default function App() {
       else if (forceValue === false) next.delete(id);
       else if (next.has(id)) next.delete(id);
       else next.add(id);
+      return next;
+    });
+  }, []);
+
+  // Toggle compare (max 4)
+  const toggleCompare = useCallback((id) => {
+    setCompareSet((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else if (next.size < 4) {
+        next.add(id);
+      }
       return next;
     });
   }, []);
@@ -173,6 +220,11 @@ export default function App() {
           selected={selected}
           onSelectStack={toggleTool}
           onSelectCategory={handleCategorySelect}
+          bookmarkCount={bookmarkCount}
+          onOpenStack={() => setStackOpen(true)}
+          onOpenShare={() => setShareOpen(true)}
+          hasSelected={selected.size > 0}
+          onOpenCalc={() => setCalcOpen(true)}
         />
 
         {/* Scrollable content */}
@@ -185,6 +237,78 @@ export default function App() {
 
           {/* Spotlight (All Tools only) */}
           {showSpotlight && <Spotlight onToolSelect={() => {}} />}
+
+          {/* Recently Added (homepage only) */}
+          {showSpotlight && sortBy !== "newest" && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <span style={{
+                  fontFamily: "monospace", fontSize: 9,
+                  color: "#00f0ff", letterSpacing: 1.5, fontWeight: 600,
+                }}>
+                  RECENTLY ADDED
+                </span>
+                <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+              </div>
+              <div style={{
+                display: "flex", gap: 8, overflowX: "auto",
+                paddingBottom: 8, scrollbarWidth: "thin",
+              }}>
+                {recentTools.map((tool) => {
+                  const cat = getCategoryById(tool.category);
+                  return (
+                    <div
+                      key={tool.id}
+                      style={{
+                        flexShrink: 0, width: 200,
+                        padding: "10px 12px",
+                        background: "var(--surface-1)",
+                        border: "1px solid var(--border)",
+                        borderRadius: 10,
+                        cursor: "pointer",
+                      }}
+                      onClick={() => handleCategorySelect(tool.category)}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4 }}>
+                        <span style={{
+                          fontFamily: "monospace", fontWeight: 700, fontSize: 11,
+                          color: "var(--text-strong)",
+                          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                        }}>
+                          {tool.name}
+                        </span>
+                        <span style={{
+                          fontSize: 7, padding: "1px 4px",
+                          background: "rgba(0,240,255,0.12)", color: "#00f0ff",
+                          borderRadius: 2, fontFamily: "monospace", fontWeight: 700,
+                          flexShrink: 0,
+                        }}>
+                          NEW
+                        </span>
+                      </div>
+                      <p style={{
+                        fontSize: 9.5, color: "var(--text-faint)", margin: 0,
+                        lineHeight: 1.3,
+                        display: "-webkit-box", WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical", overflow: "hidden",
+                      }}>
+                        {tool.desc}
+                      </p>
+                      <span style={{
+                        fontSize: 8, marginTop: 5, display: "inline-block",
+                        padding: "1px 5px",
+                        background: `${cat?.color || "#00f0ff"}10`,
+                        color: cat?.color || "#00f0ff",
+                        borderRadius: 3, fontFamily: "monospace",
+                      }}>
+                        {tool.category}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Email capture (homepage only) */}
           {showSpotlight && <EmailCapture accent={activeCatObj.color} />}
@@ -249,6 +373,11 @@ export default function App() {
                           selected={selected.has(tool.id)}
                           onToggle={toggleTool}
                           plannerMode={false}
+                          isBookmarked={isBookmarked(tool.id)}
+                          onToggleBookmark={toggleBookmark}
+                          isComparing={compareSet.has(tool.id)}
+                          onToggleCompare={toggleCompare}
+                          compareCount={compareSet.size}
                         />
                       </motion.div>
                     ))}
@@ -259,6 +388,58 @@ export default function App() {
           )}
         </main>
       </div>
+
+      {/* Floating compare bar */}
+      <AnimatePresence>
+        {compareSet.size >= 1 && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 30 }}
+            style={{
+              position: "fixed", bottom: 20, left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 50,
+              display: "flex", alignItems: "center", gap: 12,
+              padding: "10px 18px",
+              background: "var(--surface-3)",
+              backdropFilter: "blur(20px)",
+              border: "1px solid var(--border-bright)",
+              borderRadius: 12,
+              boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+            }}
+          >
+            <span style={{ fontFamily: "monospace", fontSize: 11, color: "var(--text-secondary)" }}>
+              Compare ({compareSet.size}/4)
+            </span>
+            <button
+              onClick={() => setCompareOpen(true)}
+              disabled={compareSet.size < 2}
+              style={{
+                fontFamily: "monospace", fontSize: 10,
+                background: compareSet.size >= 2 ? `${activeCatObj.color}20` : "var(--surface-1)",
+                color: compareSet.size >= 2 ? activeCatObj.color : "var(--text-faint)",
+                border: `1px solid ${compareSet.size >= 2 ? `${activeCatObj.color}40` : "var(--border)"}`,
+                borderRadius: 7, padding: "6px 14px", cursor: compareSet.size >= 2 ? "pointer" : "not-allowed",
+                opacity: compareSet.size >= 2 ? 1 : 0.5,
+              }}
+            >
+              Compare Now
+            </button>
+            <button
+              onClick={() => setCompareSet(new Set())}
+              style={{
+                fontFamily: "monospace", fontSize: 10,
+                background: "none", color: "var(--text-faint)",
+                border: "1px solid var(--border)",
+                borderRadius: 7, padding: "6px 10px", cursor: "pointer",
+              }}
+            >
+              Clear
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Feedback Widget */}
       <FeedbackWidget accent={activeCatObj.color} />
@@ -277,8 +458,41 @@ export default function App() {
         onSelectCategory={handleCategorySelect}
         onSelectTool={(tool) => {
           handleCategorySelect(tool.category);
-          // Scroll to tool (basic — just navigate to category)
         }}
+      />
+
+      {/* My Stack Panel */}
+      <MyStack
+        open={stackOpen}
+        onClose={() => setStackOpen(false)}
+        bookmarkedTools={bookmarkedTools}
+        onToggleBookmark={toggleBookmark}
+        onExport={exportMarkdown}
+        onClear={clearBookmarks}
+        accent={activeCatObj.color}
+      />
+
+      {/* Comparison Matrix */}
+      <ComparisonMatrix
+        open={compareOpen}
+        onClose={() => setCompareOpen(false)}
+        compareIds={[...compareSet]}
+        accent={activeCatObj.color}
+      />
+
+      {/* Share Panel */}
+      <SharePanel
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        selectedIds={[...selected]}
+        accent={activeCatObj.color}
+      />
+
+      {/* Cost Calculator */}
+      <CostCalculator
+        open={calcOpen}
+        onClose={() => setCalcOpen(false)}
+        accent={activeCatObj.color}
       />
     </div>
   );

@@ -243,6 +243,30 @@ export const TOOLS = [
   { id: "i14", name: "Upstash", url: "upstash.com", category: "Infrastructure", subcategory: "Databases", desc: "Serverless Redis + Kafka + QStash — per-request pricing, generous free tier, ideal for AI agent state and queues", detail: "Serverless Redis, Kafka, and QStash (HTTP message queue) with per-request pricing and a generous free tier. Ideal for AI agent systems needing fast state storage, pub/sub messaging, and reliable task queues without managing infrastructure.", quickStart: "Sign up at upstash.com → Create a Redis database or Kafka topic in seconds → Connect from your AI agent using the REST API or SDK with zero config", free: "10K commands/day Redis free; 10K messages/day Kafka free; 500 messages/day QStash free", company: "Upstash", oss: false, privacy: "SOC2 compliant; data encrypted at rest and in transit; regional deployment options", tags: ["serverless", "redis", "kafka", "queues", "free-tier"] },
 ];
 
+// Add dateAdded to all tools — recent additions get actual dates, rest get baseline
+const RECENT_TOOL_DATES = {
+  "c14": "2026-03-01", // Kling 3.0
+  "x10": "2026-03-02", // Arize Phoenix
+  "i13": "2026-03-03", // MCP Registry
+  "i14": "2026-03-04", // Upstash
+  "d8":  "2026-02-28", // Claude Code
+  "d28": "2026-02-25", // PydanticAI
+  "d27": "2026-02-20", // Mem0
+  "d26": "2026-02-22", // Agno
+};
+
+TOOLS.forEach((t) => {
+  t.dateAdded = RECENT_TOOL_DATES[t.id] || "2025-12-01";
+});
+
+export function isNewTool(tool) {
+  if (!tool.dateAdded) return false;
+  const added = new Date(tool.dateAdded);
+  const now = new Date();
+  const diffDays = (now - added) / (1000 * 60 * 60 * 24);
+  return diffDays < 14;
+}
+
 export const getToolsByCategory = (categoryId) =>
   categoryId === "all" ? TOOLS : TOOLS.filter((t) => t.category === categoryId);
 

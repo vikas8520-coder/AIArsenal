@@ -1,6 +1,8 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getCategoryById } from "../data/categories";
+import { TOOLS, isNewTool } from "../data/tools";
+import { findSimilarTools } from "../utils/similarTools";
 
 export function SkeletonCard() {
   return (
@@ -36,11 +38,23 @@ function trackClick(tool) {
   }
 }
 
-export default function ToolCard({ tool, selected, onToggle, plannerMode }) {
+export default function ToolCard({
+  tool, selected, onToggle, plannerMode,
+  isBookmarked, onToggleBookmark,
+  isComparing, onToggleCompare, compareCount = 0,
+}) {
   const [expanded, setExpanded] = useState(false);
   const cardRef = useRef(null);
   const cat = getCategoryById(tool.category);
   const accent = cat?.color || "#00f0ff";
+
+  const similarTools = useMemo(() => {
+    if (!expanded) return [];
+    return findSimilarTools(tool.id, 5).map((s) => {
+      const t = TOOLS.find((t) => t.id === s.id);
+      return t ? { ...t, score: s.score } : null;
+    }).filter(Boolean);
+  }, [expanded, tool.id]);
 
   // Mouse-glow effect
   const handleMouseMove = useCallback((e) => {
@@ -53,6 +67,7 @@ export default function ToolCard({ tool, selected, onToggle, plannerMode }) {
   }, []);
 
   const isPrivacyWarning = tool.privacy.includes("⚠️");
+  const isNew = isNewTool(tool);
 
   return (
     <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 6 }}>
@@ -136,6 +151,17 @@ export default function ToolCard({ tool, selected, onToggle, plannerMode }) {
               <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: 12.5, color: "var(--text-strong)" }}>
                 {tool.name}
               </span>
+              {isNew && (
+                <span style={{
+                  fontSize: 8, padding: "1.5px 5px",
+                  background: "rgba(0,240,255,0.12)", color: "#00f0ff",
+                  borderRadius: 3, fontFamily: "monospace", fontWeight: 700,
+                  border: "1px solid rgba(0,240,255,0.25)",
+                  animation: "pulse 2s ease-in-out infinite",
+                }}>
+                  NEW
+                </span>
+              )}
               {tool.sponsored && (
                 <span style={{
                   fontSize: 8, padding: "1.5px 5px",
@@ -166,9 +192,50 @@ export default function ToolCard({ tool, selected, onToggle, plannerMode }) {
               {tool.desc}
             </p>
           </div>
-          <span style={{ fontSize: 10, color: "var(--text-faint)", fontFamily: "monospace", marginTop: 1, flexShrink: 0 }}>
-            {expanded ? "−" : "+"}
-          </span>
+
+          {/* Right side buttons */}
+          <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0, marginTop: 1 }}>
+            {/* Bookmark star */}
+            {onToggleBookmark && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onToggleBookmark(tool.id); }}
+                title={isBookmarked ? "Remove from My Stack" : "Add to My Stack"}
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  fontSize: 14, color: isBookmarked ? "#eab308" : "var(--text-ghost)",
+                  padding: "2px 4px", lineHeight: 1,
+                  transition: "color 0.15s",
+                }}
+              >
+                {isBookmarked ? "★" : "☆"}
+              </button>
+            )}
+
+            {/* Compare checkbox */}
+            {onToggleCompare && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onToggleCompare(tool.id); }}
+                title={isComparing ? "Remove from comparison" : "Add to comparison"}
+                style={{
+                  background: isComparing ? `${accent}15` : "none",
+                  border: `1px solid ${isComparing ? `${accent}40` : "var(--border)"}`,
+                  borderRadius: 4, cursor: "pointer",
+                  width: 20, height: 20,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 10, color: isComparing ? accent : "transparent",
+                  transition: "all 0.15s",
+                  opacity: isComparing || compareCount > 0 ? 1 : 0,
+                }}
+                className="compare-btn"
+              >
+                {isComparing ? "✓" : ""}
+              </button>
+            )}
+
+            <span style={{ fontSize: 10, color: "var(--text-faint)", fontFamily: "monospace" }}>
+              {expanded ? "−" : "+"}
+            </span>
+          </div>
         </div>
 
         {/* Expanded details */}
@@ -248,6 +315,37 @@ export default function ToolCard({ tool, selected, onToggle, plannerMode }) {
                     </span>
                   ))}
                 </div>
+
+                {/* Similar Tools */}
+                {similarTools.length > 0 && (
+                  <div style={{ marginTop: 12 }}>
+                    <span style={{ color: "var(--text-faint)", fontSize: 8.5, fontFamily: "monospace", letterSpacing: 1.5 }}>
+                      SIMILAR TOOLS
+                    </span>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+                      {similarTools.map((st) => {
+                        const stCat = getCategoryById(st.category);
+                        const stAccent = stCat?.color || "#00f0ff";
+                        return (
+                          <span
+                            key={st.id}
+                            style={{
+                              fontSize: 9, padding: "3px 8px",
+                              background: `${stAccent}10`,
+                              color: stAccent,
+                              borderRadius: 4, fontFamily: "monospace",
+                              border: `1px solid ${stAccent}20`,
+                              cursor: "default",
+                            }}
+                            title={`${st.desc} (${Math.round(st.score * 100)}% match)`}
+                          >
+                            {st.name}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {/* Link */}
                 <a
