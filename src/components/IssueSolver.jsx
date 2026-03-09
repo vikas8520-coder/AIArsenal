@@ -24,7 +24,7 @@ function instantMatch(desc) {
     .map((tool) => ({ tool, reason: null }));
 }
 
-async function askClaude(desc, apiKey) {
+async function askAI(desc) {
   const preFiltered = searchTools(TOOLS, desc).slice(0, 40);
   const toolList = preFiltered
     .map((t) => `ID:${t.id} | ${t.name} | ${t.category} | ${t.desc}`)
@@ -37,64 +37,28 @@ ${toolList}
 
 USER PROBLEM: ${desc}
 
-Respond ONLY with valid JSON: {"tools":[{"id":"exact_id","reason":"one sentence why this solves the problem"}]}
+Respond ONLY with valid JSON (no backticks, no markdown): {"tools":[{"id":"exact_id","reason":"one sentence why this solves the problem"}]}
 Suggest 4-8 tools. Only use IDs from the list above.`;
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await fetch("/api/planner", {
     method: "POST",
-    headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true",
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: 600,
-      messages: [{ role: "user", content: prompt }],
-    }),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt }),
   });
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || `API error ${res.status}`);
-  }
-
+  if (!res.ok) throw new Error(`API error ${res.status}`);
   const data = await res.json();
-  const text = data.content?.[0]?.text || "";
+  let text = data.text || "";
+  if (text.startsWith("```")) {
+    text = text.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+  }
   const match = text.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error("Invalid response from Claude");
+  if (!match) throw new Error("Invalid AI response");
   const parsed = JSON.parse(match[0]);
 
   return (parsed.tools || [])
     .map(({ id, reason }) => ({ tool: TOOLS.find((t) => t.id === id), reason }))
     .filter((r) => r.tool);
-}
-
-async function exaSearch(desc, exaKey) {
-  const res = await fetch("https://api.exa.ai/search", {
-    method: "POST",
-    headers: {
-      "x-api-key": exaKey,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      query: `AI tools to help: ${desc}`,
-      type: "auto",
-      num_results: 6,
-      contents: {
-        highlights: { max_characters: 200, num_sentences: 2 },
-      },
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || `Exa API error ${res.status}`);
-  }
-
-  const data = await res.json();
-  return data.results || [];
 }
 
 function ToolResultCard({ tool, reason, accent, onSelect }) {
@@ -139,82 +103,6 @@ function ToolResultCard({ tool, reason, accent, onSelect }) {
   );
 }
 
-function WebResultCard({ result }) {
-  const hostname = (() => {
-    try { return new URL(result.url).hostname.replace("www.", ""); } catch { return result.url; }
-  })();
-  return (
-    <motion.a
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      href={result.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      style={{
-        display: "flex", flexDirection: "column", gap: 3, padding: "9px 12px",
-        background: "var(--surface-1)", border: "1px solid var(--border)",
-        borderRadius: 8, textDecoration: "none", transition: "all 0.15s",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = "rgba(99,102,241,0.35)";
-        e.currentTarget.style.background = "var(--surface-2)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = "var(--border)";
-        e.currentTarget.style.background = "var(--surface-1)";
-      }}
-    >
-      <div style={{ fontSize: 12, fontFamily: "monospace", color: "var(--text-strong)", fontWeight: 600 }}>
-        {result.title} ↗
-      </div>
-      <div style={{ fontSize: 10, color: "var(--text-faint)", fontFamily: "monospace" }}>{hostname}</div>
-      {result.highlights?.[0] && (
-        <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2, lineHeight: 1.4 }}>
-          {result.highlights[0].text}
-        </div>
-      )}
-    </motion.a>
-  );
-}
-
-function ApiKeyInput({ label, value, onChange, onSave, placeholder }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: "auto" }}
-      exit={{ opacity: 0, height: 0 }}
-      style={{ overflow: "hidden" }}
-    >
-      <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-        <span style={{ fontSize: 10, fontFamily: "monospace", color: "var(--text-faint)", alignSelf: "center", flexShrink: 0 }}>
-          {label}
-        </span>
-        <input
-          type="password"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          style={{
-            flex: 1, background: "var(--surface-2)", border: "1px solid var(--border-bright)",
-            borderRadius: 6, color: "var(--text-strong)", fontSize: 11,
-            fontFamily: "monospace", padding: "5px 10px", outline: "none",
-          }}
-          onKeyDown={(e) => e.key === "Enter" && onSave()}
-        />
-        <button
-          onClick={onSave}
-          style={{
-            fontSize: 10, fontFamily: "monospace", padding: "5px 12px",
-            background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)",
-            borderRadius: 6, color: "#818cf8", cursor: "pointer", flexShrink: 0,
-          }}
-        >
-          Save
-        </button>
-      </div>
-    </motion.div>
-  );
-}
 
 export default function IssueSolver({ accent, onSelectTool }) {
   const [desc, setDesc] = useState("");
@@ -223,22 +111,6 @@ export default function IssueSolver({ accent, onSelectTool }) {
   const [webResults, setWebResults] = useState([]);
   const [error, setError] = useState(null);
   const [activeMode, setActiveMode] = useState(null);
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem("nexus-api-key") || "");
-  const [exaKey, setExaKey] = useState(() => localStorage.getItem("nexus-exa-key") || "");
-  const [showClaudeKeyInput, setShowClaudeKeyInput] = useState(false);
-  const [showExaKeyInput, setShowExaKeyInput] = useState(false);
-
-  const saveClaudeKey = () => {
-    if (!apiKey.trim()) return;
-    try { localStorage.setItem("nexus-api-key", apiKey.trim()); } catch {}
-    setShowClaudeKeyInput(false);
-  };
-
-  const saveExaKey = () => {
-    if (!exaKey.trim()) return;
-    try { localStorage.setItem("nexus-exa-key", exaKey.trim()); } catch {}
-    setShowExaKeyInput(false);
-  };
 
   const runInstant = () => {
     if (!desc.trim()) return;
@@ -249,17 +121,15 @@ export default function IssueSolver({ accent, onSelectTool }) {
     setToolResults(results);
   };
 
-  const runClaude = async () => {
+  const runAI = async () => {
     if (!desc.trim()) return;
-    const key = apiKey.trim();
-    if (!key) { setShowClaudeKeyInput(true); return; }
     setError(null);
     setWebResults([]);
-    setActiveMode("claude");
+    setActiveMode("ai");
     setLoading(true);
     setToolResults([]);
     try {
-      const results = await askClaude(desc, key);
+      const results = await askAI(desc);
       setToolResults(results);
     } catch (e) {
       setError(e.message);
@@ -268,30 +138,7 @@ export default function IssueSolver({ accent, onSelectTool }) {
     }
   };
 
-  const runExa = async () => {
-    if (!desc.trim()) return;
-    const key = exaKey.trim();
-    if (!key) { setShowExaKeyInput(true); return; }
-    setError(null);
-    setActiveMode("exa");
-    setLoading(true);
-    setToolResults([]);
-    setWebResults([]);
-    try {
-      const [tools, web] = await Promise.all([
-        Promise.resolve(instantMatch(desc)),
-        exaSearch(desc, key),
-      ]);
-      setToolResults(tools);
-      setWebResults(web);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const hasResults = toolResults.length > 0 || webResults.length > 0;
+  const hasResults = toolResults.length > 0;
 
   return (
     <motion.div
@@ -335,28 +182,6 @@ export default function IssueSolver({ accent, onSelectTool }) {
         onKeyDown={(e) => { if (e.key === "Enter" && e.metaKey) runInstant(); }}
       />
 
-      {/* API key inputs (conditional) */}
-      <AnimatePresence>
-        {showClaudeKeyInput && (
-          <ApiKeyInput
-            label="Anthropic key:"
-            value={apiKey}
-            onChange={setApiKey}
-            onSave={saveClaudeKey}
-            placeholder="sk-ant-..."
-          />
-        )}
-        {showExaKeyInput && (
-          <ApiKeyInput
-            label="Exa key:"
-            value={exaKey}
-            onChange={setExaKey}
-            onSave={saveExaKey}
-            placeholder="your-exa-api-key"
-          />
-        )}
-      </AnimatePresence>
-
       {/* Action buttons */}
       <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
         <button
@@ -375,33 +200,18 @@ export default function IssueSolver({ accent, onSelectTool }) {
         </button>
 
         <button
-          onClick={runClaude}
+          onClick={runAI}
           disabled={!desc.trim() || loading}
           style={{
             fontFamily: "monospace", fontSize: 10, padding: "7px 14px",
-            background: activeMode === "claude" ? "rgba(99,102,241,0.15)" : "var(--surface-2)",
-            border: `1px solid ${activeMode === "claude" ? "rgba(99,102,241,0.4)" : "var(--border-bright)"}`,
+            background: activeMode === "ai" ? `${accent}20` : "var(--surface-2)",
+            border: `1px solid ${activeMode === "ai" ? accent + "50" : "var(--border-bright)"}`,
             borderRadius: 7, cursor: desc.trim() ? "pointer" : "not-allowed",
-            color: activeMode === "claude" ? "#818cf8" : "var(--text-secondary)",
+            color: activeMode === "ai" ? accent : "var(--text-secondary)",
             transition: "all 0.15s",
           }}
         >
-          ✦ Ask Claude
-        </button>
-
-        <button
-          onClick={runExa}
-          disabled={!desc.trim() || loading}
-          style={{
-            fontFamily: "monospace", fontSize: 10, padding: "7px 14px",
-            background: activeMode === "exa" ? "rgba(16,185,129,0.12)" : "var(--surface-2)",
-            border: `1px solid ${activeMode === "exa" ? "rgba(16,185,129,0.35)" : "var(--border-bright)"}`,
-            borderRadius: 7, cursor: desc.trim() ? "pointer" : "not-allowed",
-            color: activeMode === "exa" ? "#10b981" : "var(--text-secondary)",
-            transition: "all 0.15s",
-          }}
-        >
-          🔍 Web Search
+          ✦ AI Recommend
         </button>
 
         <span style={{ fontSize: 9, fontFamily: "monospace", color: "var(--text-faint)", alignSelf: "center", marginLeft: 4 }}>
@@ -416,7 +226,7 @@ export default function IssueSolver({ accent, onSelectTool }) {
             animate={{ opacity: [0.4, 1, 0.4] }}
             transition={{ duration: 1.2, repeat: Infinity }}
           >
-            {activeMode === "claude" ? "Asking Claude…" : "Searching the web…"}
+            Thinking…
           </motion.span>
         </div>
       )}
@@ -461,32 +271,6 @@ export default function IssueSolver({ accent, onSelectTool }) {
             </div>
           )}
 
-          {/* Web resources */}
-          {webResults.length > 0 && (
-            <div style={{ marginTop: toolResults.length > 0 ? 16 : 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                <span style={{ fontSize: 9, fontFamily: "monospace", letterSpacing: 1.5, color: "var(--text-faint)" }}>
-                  WEB RESOURCES
-                </span>
-                <span style={{
-                  fontSize: 9, fontFamily: "monospace",
-                  background: "rgba(16,185,129,0.1)", color: "#10b981",
-                  border: "1px solid rgba(16,185,129,0.2)", borderRadius: 3, padding: "0 5px",
-                }}>
-                  {webResults.length}
-                </span>
-                <span style={{ fontSize: 9, fontFamily: "monospace", color: "var(--text-faint)" }}>
-                  via Exa
-                </span>
-                <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {webResults.map((result, i) => (
-                  <WebResultCard key={result.url || i} result={result} />
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
 

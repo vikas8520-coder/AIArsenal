@@ -295,3 +295,64 @@ body {
     transparent 40%
   );
 }
+
+/* ── Mobile Responsiveness ── */
+@media (max-width: 768px) {
+  /* Sidebar becomes overlay */
+  .sidebar-mobile-overlay {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 50;
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.4);
+  }
+  .sidebar-mobile-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 49;
+  }
+
+  /* Header adjustments */
+  .header-mobile {
+    padding: 12px 14px 10px !important;
+  }
+  .header-mobile .header-title-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .header-mobile .header-controls {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* Hide low-priority header buttons on small screens */
+  .hide-mobile {
+    display: none !important;
+  }
+
+  /* Main content full width */
+  .main-content-mobile {
+    padding: 12px 12px 32px !important;
+  }
+
+  /* Command palette */
+  [cmdk-dialog] {
+    top: 10%;
+    width: 95vw;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Even tighter on phones */
+  .main-content-mobile {
+    padding: 10px 8px 24px !important;
+  }
+
+  /* Stack stat chips */
+  .stats-mobile {
+    gap: 8px !important;
+  }
+}

@@ -28,48 +28,32 @@ export default function PlannerPanel({
   tools, selected, onSelect, plannerMode, accent,
 }) {
   const [desc, setDesc] = useState("");
-  const [apiKey, setApiKey] = useState(() => {
-    try { return localStorage.getItem("nexus-api-key") || ""; } catch { return ""; }
-  });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [showStack, setShowStack] = useState(false);
 
-  const saveKey = (k) => {
-    setApiKey(k);
-    try { localStorage.setItem("nexus-api-key", k); } catch {}
-  };
-
   const selectedTools = tools.filter((t) => selected.has(t.id));
 
   const runAI = async () => {
     if (!desc.trim()) { setError("Describe your project first."); return; }
-    if (!apiKey.trim()) { setError("Enter your Anthropic API key."); return; }
     setLoading(true);
     setError(null);
     setResult(null);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/planner", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: 1200,
-          messages: [{ role: "user", content: buildPrompt(desc, tools) }],
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: buildPrompt(desc, tools) }),
       });
       if (!res.ok) throw new Error(`API error ${res.status}`);
       const data = await res.json();
-      const raw = data.content?.[0]?.text || "";
+      let raw = data.text || "";
+      if (raw.startsWith("```")) {
+        raw = raw.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+      }
       const parsed = JSON.parse(raw);
       setResult(parsed);
-      // Auto-select recommended tools
       if (parsed.recommended) {
         parsed.recommended.forEach((r) => onSelect(r.id, true));
       }
@@ -118,22 +102,6 @@ export default function PlannerPanel({
         <span style={{ fontSize: 10, fontFamily: "monospace", color: "var(--text-faint)" }}>
           {selected.size} selected
         </span>
-      </div>
-
-      {/* API Key */}
-      <div style={{ marginBottom: 10 }}>
-        <input
-          type="password"
-          value={apiKey}
-          onChange={(e) => saveKey(e.target.value)}
-          placeholder="Anthropic API key (stored locally, never sent elsewhere)"
-          style={{
-            width: "100%", padding: "9px 12px",
-            background: "var(--surface-1)", border: "1px solid var(--border)",
-            borderRadius: 8, color: "var(--text-default)", fontSize: 11,
-            fontFamily: "monospace", outline: "none", boxSizing: "border-box",
-          }}
-        />
       </div>
 
       {/* Description */}

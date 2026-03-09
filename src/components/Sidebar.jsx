@@ -72,6 +72,20 @@ function ShortcutOverlay({ onClose }) {
 export default function Sidebar({ activeCat, onSelect, toolCounts }) {
   const [collapsed, setCollapsed] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  const handleSelect = (id) => {
+    onSelect(id);
+    if (isMobile) setMobileOpen(false);
+  };
 
   // Keyboard nav: 1–9 for categories, ? for shortcuts
   useEffect(() => {
@@ -92,22 +106,48 @@ export default function Sidebar({ activeCat, onSelect, toolCounts }) {
     <>
       {showShortcuts && <ShortcutOverlay onClose={() => setShowShortcuts(false)} />}
 
+      {/* Mobile hamburger button */}
+      {isMobile && !mobileOpen && (
+        <button
+          onClick={() => setMobileOpen(true)}
+          aria-label="Open menu"
+          style={{
+            position: "fixed", top: 12, left: 12, zIndex: 51,
+            background: "var(--surface-3)", border: "1px solid var(--border-bright)",
+            borderRadius: 8, padding: "8px 10px", cursor: "pointer",
+            color: "var(--text-strong)", fontSize: 16, lineHeight: 1,
+            backdropFilter: "blur(12px)",
+          }}
+        >
+          ☰
+        </button>
+      )}
+
+      {/* Mobile backdrop */}
+      {isMobile && mobileOpen && (
+        <div
+          className="sidebar-mobile-backdrop"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
       <motion.nav
         aria-label="Categories"
-        animate={{ width: collapsed ? 52 : 210 }}
+        animate={{ width: isMobile ? 210 : (collapsed ? 52 : 210) }}
         transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+        className={isMobile ? "sidebar-mobile-overlay" : ""}
         style={{
           flexShrink: 0,
           height: "100vh",
-          position: "sticky",
+          position: isMobile ? "fixed" : "sticky",
           top: 0,
-          background: "var(--surface-1)",
+          background: isMobile ? "var(--bg)" : "var(--surface-1)",
           backdropFilter: "blur(20px)",
           borderRight: "1px solid var(--border)",
-          display: "flex",
+          display: isMobile && !mobileOpen ? "none" : "flex",
           flexDirection: "column",
           overflow: "hidden",
-          zIndex: 10,
+          zIndex: isMobile ? 50 : 10,
         }}
       >
         {/* Top bar */}
@@ -150,7 +190,7 @@ export default function Sidebar({ activeCat, onSelect, toolCounts }) {
             return (
               <motion.button
                 key={cat.id}
-                onClick={() => onSelect(cat.id)}
+                onClick={() => handleSelect(cat.id)}
                 title={collapsed ? `${cat.label} (${idx + 1})` : undefined}
                 whileHover={{ x: 2 }}
                 whileTap={{ scale: 0.97 }}

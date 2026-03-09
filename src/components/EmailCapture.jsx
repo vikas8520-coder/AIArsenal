@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const CONVERTKIT_FORM_ID = "YOUR_FORM_ID";
-const CONVERTKIT_API_KEY = "YOUR_API_KEY";
 const STORAGE_KEY = "aiarsenal-email-dismissed";
 
 export default function EmailCapture({ accent = "#00f0ff", compact = false }) {
@@ -29,24 +27,14 @@ export default function EmailCapture({ accent = "#00f0ff", compact = false }) {
 
     setStatus("submitting");
     try {
-      const res = await fetch(
-        `https://api.convertkit.com/v3/forms/${CONVERTKIT_FORM_ID}/subscribe`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ api_key: CONVERTKIT_API_KEY, email }),
-        }
-      );
+      const res = await fetch("/api/lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, source: "email_capture" }),
+      });
       if (res.ok) {
         setStatus("success");
-        // Fire Plausible custom event
         if (window.plausible) window.plausible("Email Signup");
-        // Log lead to Airtable (fire-and-forget)
-        fetch("/api/lead", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, source: "email_capture" }),
-        }).catch(() => {});
         try { localStorage.setItem(STORAGE_KEY, "1"); } catch {}
       } else {
         setStatus("error");

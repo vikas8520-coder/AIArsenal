@@ -1,0 +1,9 @@
+node_modules
+.git
+.vercel
+.claude
+src
+*.md
+*.zip
+*.jsx
+.DS_Store

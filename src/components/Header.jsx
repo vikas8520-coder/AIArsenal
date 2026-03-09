@@ -126,7 +126,7 @@ export default function Header({
   }, []);
 
   return (
-    <header style={{
+    <header className="header-mobile" style={{
       padding: "18px 24px 14px",
       borderBottom: "1px solid var(--border)",
       background: theme === "light" ? "rgba(240,244,248,0.8)" : "rgba(10,10,10,0.7)",
@@ -134,7 +134,7 @@ export default function Header({
       position: "sticky", top: 0, zIndex: 20,
     }}>
       {/* Title row */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+      <div className="header-title-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         {showTitle && (
           <motion.div
             initial={booted ? false : { opacity: 0, y: -6 }}
@@ -182,13 +182,14 @@ export default function Header({
       </div>
 
       {/* Controls row */}
-      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      <div className="header-controls" style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <TypewriterSearch value={search} onChange={onSearch} accent={accent} />
 
         {/* ⌘K pill */}
         <button
           onClick={onOpenPalette}
           title="Command palette (⌘K)"
+          className="hide-mobile"
           style={{
             fontFamily: "monospace", fontSize: 10,
             background: "var(--surface-1)", border: "1px solid var(--border-bright)",
@@ -212,6 +213,7 @@ export default function Header({
           value={sortBy}
           onChange={e => onSort(e.target.value)}
           aria-label="Sort tools by"
+          className="hide-mobile"
           style={{
             background: "var(--surface-1)", border: "1px solid var(--border-bright)",
             borderRadius: 8, color: "var(--text-secondary)", fontSize: 11,
@@ -256,6 +258,7 @@ export default function Header({
         {/* Submit Tool */}
         <button
           onClick={onToggleSubmit}
+          className="hide-mobile"
           style={{
             fontFamily: "monospace", fontSize: 10,
             background: "var(--surface-1)",
@@ -272,7 +275,7 @@ export default function Header({
 
         {/* Result count */}
         {resultCount !== undefined && (
-          <span style={{ fontSize: 10, fontFamily: "monospace", color: "var(--text-faint)", whiteSpace: "nowrap" }}>
+          <span className="hide-mobile" style={{ fontSize: 10, fontFamily: "monospace", color: "var(--text-faint)", whiteSpace: "nowrap" }}>
             {resultCount} results
           </span>
         )}
