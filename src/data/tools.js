@@ -263,6 +263,18 @@ export const TOOLS = [
     pricing: "Free",
     hasFreeOption: true,
   },
+
+  // ── Added by Arsenal Curator (2026-03-10) ──
+  {
+    id: "d37",
+    name: "OSS AI Hub",
+    tagline: "AI search and comparison for 1000+ open-source AI tools",
+    url: "https://chatgate.ai/post/oss-ai-hub",
+    category: "Developer Tools",
+    tags: ["Open Source", "AI Search", "Tool Discovery", "Comparison"],
+    pricing: "Freemium",
+    hasFreeOption: true,
+  },
 ];
 
 // Add dateAdded to all tools — recent additions get actual dates, rest get baseline
