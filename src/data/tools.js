@@ -241,6 +241,28 @@ export const TOOLS = [
 
   { id: "i13", name: "MCP Registry", url: "github.com/modelcontextprotocol/registry", category: "Infrastructure", subcategory: "Protocols", desc: "Official Model Context Protocol server registry — discover and install MCP servers for any tool or data source", detail: "The official registry of MCP servers maintained by Anthropic. Browse, discover, and install MCP servers that connect AI assistants to any tool, API, or data source. The central hub for the growing MCP ecosystem.", quickStart: "Browse the registry at github.com/modelcontextprotocol/registry → Find an MCP server for your tool or data source → Add the server config to your AI assistant's MCP settings", free: "Fully free; open registry", company: "Anthropic", oss: true, privacy: "Registry is public; individual servers have their own privacy policies", tags: ["mcp", "registry", "protocols", "ecosystem"] },
   { id: "i14", name: "Upstash", url: "upstash.com", category: "Infrastructure", subcategory: "Databases", desc: "Serverless Redis + Kafka + QStash — per-request pricing, generous free tier, ideal for AI agent state and queues", detail: "Serverless Redis, Kafka, and QStash (HTTP message queue) with per-request pricing and a generous free tier. Ideal for AI agent systems needing fast state storage, pub/sub messaging, and reliable task queues without managing infrastructure.", quickStart: "Sign up at upstash.com → Create a Redis database or Kafka topic in seconds → Connect from your AI agent using the REST API or SDK with zero config", free: "10K commands/day Redis free; 10K messages/day Kafka free; 500 messages/day QStash free", company: "Upstash", oss: false, privacy: "SOC2 compliant; data encrypted at rest and in transit; regional deployment options", tags: ["serverless", "redis", "kafka", "queues", "free-tier"] },
+
+  // ── Added by Arsenal Curator (2026-03-10) ──
+  {
+    id: "e21",
+    name: "AI Enhancer",
+    tagline: "Free AI photo enhancer for simple, solid results without paywalls or glitches.",
+    url: "https://news.ycombinator.com/item?id=46131377",
+    category: "End-User Tools",
+    tags: ["photo enhancer", "image enhancement", "free", "AI"],
+    pricing: "Free",
+    hasFreeOption: true,
+  },
+  {
+    id: "c15",
+    name: "Free AI Image Upscaler",
+    tagline: "100% local, private, and free AI image upscaler that runs in your browser.",
+    url: "https://news.ycombinator.com/item?id=46644984",
+    category: "Creative AI",
+    tags: ["image upscaler", "local", "private", "free", "browser-based", "image processing"],
+    pricing: "Free",
+    hasFreeOption: true,
+  },
 ];
 
 // Add dateAdded to all tools — recent additions get actual dates, rest get baseline
