@@ -21,7 +21,7 @@ const USE_CASES = [
 ];
 
 const TYPEWRITER_PHRASES = [
-  "Search 215+ tools...",
+  `Search ${TOOLS.length}+ tools...`,
   "Try: Cursor vs Copilot",
   "Try: free gpu compute...",
   "Ask: What are alternatives to Gemini?",
@@ -724,7 +724,7 @@ export default function SmartSearch({
             transition={{ duration: 0.15 }}
             style={{
               position: "absolute", top: "100%", left: 0, right: 0,
-              background: "var(--surface-3)",
+              background: "var(--bg, #0a0a0a)",
               border: "1px solid var(--border-bright)",
               borderTop: "none",
               borderRadius: "0 0 10px 10px",
@@ -733,7 +733,7 @@ export default function SmartSearch({
               maxHeight: 520,
               overflowY: "auto",
               backdropFilter: "blur(20px)",
-              boxShadow: "0 12px 40px rgba(0,0,0,0.3)",
+              boxShadow: "0 12px 40px rgba(0,0,0,0.5)",
             }}
             className="no-scrollbar"
           >

@@ -67,7 +67,7 @@ export default function Header({
       borderBottom: "1px solid var(--border)",
       background: theme === "light" ? "rgba(240,244,248,0.8)" : "rgba(10,10,10,0.7)",
       backdropFilter: "blur(20px)",
-      position: "sticky", top: 0, zIndex: 20,
+      position: "sticky", top: 0, zIndex: 100,
     }}>
       {/* Title row */}
       <div className="header-title-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
