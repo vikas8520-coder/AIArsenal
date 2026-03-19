@@ -248,6 +248,7 @@ export const TOOLS = [
 
 // Add dateAdded to all tools — recent additions get actual dates, rest get baseline
 const RECENT_TOOL_DATES = {
+  "d37": "2026-03-15", // UTIM AI
   "c14": "2026-03-01", // Kling 3.0
   "x10": "2026-03-02", // Arize Phoenix
   "i13": "2026-03-03", // MCP Registry
