@@ -268,15 +268,26 @@ export default function App() {
                         cursor: "pointer",
                       }}
                       onClick={() => {
-                        handleCategorySelect(tool.category);
-                        setTimeout(() => {
+                        const scrollToTool = () => {
                           const el = document.getElementById(`tool-${tool.id}`);
                           if (el) {
                             el.scrollIntoView({ behavior: "smooth", block: "center" });
                             el.style.boxShadow = "0 0 0 2px #00f0ff";
+                            el.style.transition = "box-shadow 0.3s";
                             setTimeout(() => el.style.boxShadow = "", 2000);
+                            return true;
                           }
-                        }, 300);
+                          return false;
+                        };
+                        // If tool is already visible (e.g. "All Tools" view), scroll directly
+                        if (scrollToTool()) return;
+                        // Otherwise switch category and wait for render
+                        handleCategorySelect(tool.category);
+                        let attempts = 0;
+                        const poll = setInterval(() => {
+                          attempts++;
+                          if (scrollToTool() || attempts > 10) clearInterval(poll);
+                        }, 100);
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4 }}>
