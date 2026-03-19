@@ -270,23 +270,28 @@ export default function App() {
                       onClick={() => {
                         const scrollToTool = () => {
                           const el = document.getElementById(`tool-${tool.id}`);
-                          if (el) {
+                          if (!el) return false;
+                          // Find the scrollable <main> container
+                          const main = el.closest("main");
+                          if (main) {
+                            const mainRect = main.getBoundingClientRect();
+                            const elRect = el.getBoundingClientRect();
+                            const offset = elRect.top - mainRect.top + main.scrollTop - (mainRect.height / 2) + (elRect.height / 2);
+                            main.scrollTo({ top: offset, behavior: "smooth" });
+                          } else {
                             el.scrollIntoView({ behavior: "smooth", block: "center" });
-                            el.style.boxShadow = "0 0 0 2px #00f0ff";
-                            el.style.transition = "box-shadow 0.3s";
-                            setTimeout(() => el.style.boxShadow = "", 2000);
-                            return true;
                           }
-                          return false;
+                          el.style.boxShadow = "0 0 0 2px #00f0ff";
+                          el.style.transition = "box-shadow 0.3s";
+                          setTimeout(() => el.style.boxShadow = "", 2000);
+                          return true;
                         };
-                        // If tool is already visible (e.g. "All Tools" view), scroll directly
-                        if (scrollToTool()) return;
-                        // Otherwise switch category and wait for render
+                        // Always switch to tool's category for focused view
                         handleCategorySelect(tool.category);
                         let attempts = 0;
                         const poll = setInterval(() => {
                           attempts++;
-                          if (scrollToTool() || attempts > 10) clearInterval(poll);
+                          if (scrollToTool() || attempts > 20) clearInterval(poll);
                         }, 100);
                       }}
                     >
