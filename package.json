@@ -2,7 +2,7 @@
   "name": "ai-intelligence-nexus",
   "version": "1.0.0",
   "type": "module",
-  "description": "215+ curated free AI tools, credits, compute & systems",
+  "description": "185+ curated free AI tools, credits, compute & systems",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

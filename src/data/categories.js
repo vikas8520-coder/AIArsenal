@@ -6,7 +6,7 @@ export const CATEGORIES = [
     color: "#00f0ff",
     orb1: "#00f0ff",
     orb2: "#3b82f6",
-    desc: "215+ vetted tools, credits, income paths, and AI system blueprints.",
+    desc: "185+ vetted tools, credits, income paths, and AI system blueprints.",
     mood: "Discovery",
   },
   {
