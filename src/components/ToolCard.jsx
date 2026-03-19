@@ -94,6 +94,7 @@ export default function ToolCard({
 
       {/* Card */}
       <div
+        id={`tool-${tool.id}`}
         ref={cardRef}
         className="card-glow-container"
         onClick={() => setExpanded(!expanded)}

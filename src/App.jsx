@@ -267,7 +267,17 @@ export default function App() {
                         borderRadius: 10,
                         cursor: "pointer",
                       }}
-                      onClick={() => handleCategorySelect(tool.category)}
+                      onClick={() => {
+                        handleCategorySelect(tool.category);
+                        setTimeout(() => {
+                          const el = document.getElementById(`tool-${tool.id}`);
+                          if (el) {
+                            el.scrollIntoView({ behavior: "smooth", block: "center" });
+                            el.style.boxShadow = "0 0 0 2px #00f0ff";
+                            setTimeout(() => el.style.boxShadow = "", 2000);
+                          }
+                        }, 300);
+                      }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4 }}>
                         <span style={{
