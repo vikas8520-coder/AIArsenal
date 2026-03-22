@@ -286,13 +286,16 @@ export default function App() {
                           setTimeout(() => el.style.boxShadow = "", 2000);
                           return true;
                         };
-                        // Always switch to tool's category for focused view
+                        // Switch to tool's category, then scroll after render
                         handleCategorySelect(tool.category);
-                        let attempts = 0;
-                        const poll = setInterval(() => {
-                          attempts++;
-                          if (scrollToTool() || attempts > 20) clearInterval(poll);
-                        }, 100);
+                        // Wait for React to commit the category re-render before polling
+                        setTimeout(() => {
+                          let attempts = 0;
+                          const poll = setInterval(() => {
+                            attempts++;
+                            if (scrollToTool() || attempts > 50) clearInterval(poll);
+                          }, 150);
+                        }, 300);
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4 }}>
