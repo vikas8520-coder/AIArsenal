@@ -259,6 +259,15 @@ export const TOOLS = [
 
 // Add dateAdded to all tools — recent additions get actual dates, rest get baseline
 const RECENT_TOOL_DATES = {
+  "a18": "2026-03-22", // FreeAgent
+  "r8": "2026-03-22", // OpenMAIC
+  "o15": "2026-03-22", // OpenViktor
+  "d38": "2026-03-22", // Clawith
+  "a19": "2026-03-22", // OpenBotX
+  "d39": "2026-03-22", // AI Build AI
+  "i15": "2026-03-22", // Graviton
+  "d40": "2026-03-22", // OpenClaw
+  "o16": "2026-03-22", // Entropic
   "d37": "2026-03-15", // UTIM AI
   "c14": "2026-03-01", // Kling 3.0
   "x10": "2026-03-02", // Arize Phoenix
