@@ -108,30 +108,48 @@ export default function App() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  // Scroll to tool after category switch + loading complete
+  // Scroll to tool after category switch renders
   useEffect(() => {
-    if (!scrollToToolId || loading) return;
-    // Wait for AnimatePresence fade-in (200ms) + extra buffer
-    const timer = setTimeout(() => {
+    if (!scrollToToolId) return;
+    // Use requestAnimationFrame to wait for React DOM commit, then scroll
+    let cancelled = false;
+    const tryScroll = () => {
       const el = document.getElementById(`tool-${scrollToToolId}`);
-      if (el) {
-        const main = el.closest("main");
-        if (main) {
+      if (!el) return false;
+      const main = el.closest("main");
+      if (main) {
+        // Reset scroll to top first so offset calc is accurate
+        main.scrollTop = 0;
+        // Wait one more frame for layout to settle after scroll reset
+        requestAnimationFrame(() => {
+          if (cancelled) return;
           const mainRect = main.getBoundingClientRect();
           const elRect = el.getBoundingClientRect();
           const offset = elRect.top - mainRect.top + main.scrollTop - (mainRect.height / 2) + (elRect.height / 2);
-          main.scrollTo({ top: offset, behavior: "smooth" });
-        } else {
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-        el.style.boxShadow = "0 0 0 2px #00f0ff";
-        el.style.transition = "box-shadow 0.3s";
-        setTimeout(() => { el.style.boxShadow = ""; }, 2000);
+          main.scrollTo({ top: Math.max(0, offset), behavior: "smooth" });
+        });
+      } else {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
       }
-      setScrollToToolId(null);
-    }, 350);
-    return () => clearTimeout(timer);
-  }, [scrollToToolId, loading]);
+      // Highlight
+      el.style.boxShadow = "0 0 0 2px #00f0ff";
+      el.style.transition = "box-shadow 0.3s";
+      setTimeout(() => { el.style.boxShadow = ""; }, 2500);
+      return true;
+    };
+
+    // Poll: wait for element to appear in DOM (animation skipped, but React still needs to render)
+    let attempts = 0;
+    const poll = setInterval(() => {
+      attempts++;
+      if (tryScroll() || attempts > 30) {
+        clearInterval(poll);
+        setScrollToToolId(null);
+      }
+    }, 50);
+
+    return () => { cancelled = true; clearInterval(poll); };
+  }, [scrollToToolId]);
 
   // Filter + sort
   const filtered = useMemo(() => {
@@ -194,12 +212,14 @@ export default function App() {
     });
   }, []);
 
-  // Category switch with brief loading effect
-  const handleCategorySelect = useCallback((id) => {
+  // Category switch with brief loading effect (skipped when scrolling to a tool)
+  const handleCategorySelect = useCallback((id, skipAnimation) => {
     setActiveCat(id);
     setSearch("");
-    setLoading(true);
-    setTimeout(() => setLoading(false), 180);
+    if (!skipAnimation) {
+      setLoading(true);
+      setTimeout(() => setLoading(false), 180);
+    }
   }, []);
 
   // Grouped subcategory view
@@ -294,7 +314,7 @@ export default function App() {
                         cursor: "pointer",
                       }}
                       onClick={() => {
-                        handleCategorySelect(tool.category);
+                        handleCategorySelect(tool.category, true);
                         setScrollToToolId(tool.id);
                       }}
                     >
