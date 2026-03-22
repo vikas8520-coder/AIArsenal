@@ -43,6 +43,7 @@ export default function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [submitOpen, setSubmitOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [scrollToToolId, setScrollToToolId] = useState(null);
   const [theme, setTheme] = useState(() => {
     try { return localStorage.getItem("nexus-theme") || "dark"; } catch { return "dark"; }
   });
@@ -106,6 +107,31 @@ export default function App() {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, []);
+
+  // Scroll to tool after category switch + loading complete
+  useEffect(() => {
+    if (!scrollToToolId || loading) return;
+    // Wait for AnimatePresence fade-in (200ms) + extra buffer
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`tool-${scrollToToolId}`);
+      if (el) {
+        const main = el.closest("main");
+        if (main) {
+          const mainRect = main.getBoundingClientRect();
+          const elRect = el.getBoundingClientRect();
+          const offset = elRect.top - mainRect.top + main.scrollTop - (mainRect.height / 2) + (elRect.height / 2);
+          main.scrollTo({ top: offset, behavior: "smooth" });
+        } else {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+        el.style.boxShadow = "0 0 0 2px #00f0ff";
+        el.style.transition = "box-shadow 0.3s";
+        setTimeout(() => { el.style.boxShadow = ""; }, 2000);
+      }
+      setScrollToToolId(null);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [scrollToToolId, loading]);
 
   // Filter + sort
   const filtered = useMemo(() => {
@@ -268,34 +294,8 @@ export default function App() {
                         cursor: "pointer",
                       }}
                       onClick={() => {
-                        const scrollToTool = () => {
-                          const el = document.getElementById(`tool-${tool.id}`);
-                          if (!el) return false;
-                          // Find the scrollable <main> container
-                          const main = el.closest("main");
-                          if (main) {
-                            const mainRect = main.getBoundingClientRect();
-                            const elRect = el.getBoundingClientRect();
-                            const offset = elRect.top - mainRect.top + main.scrollTop - (mainRect.height / 2) + (elRect.height / 2);
-                            main.scrollTo({ top: offset, behavior: "smooth" });
-                          } else {
-                            el.scrollIntoView({ behavior: "smooth", block: "center" });
-                          }
-                          el.style.boxShadow = "0 0 0 2px #00f0ff";
-                          el.style.transition = "box-shadow 0.3s";
-                          setTimeout(() => el.style.boxShadow = "", 2000);
-                          return true;
-                        };
-                        // Switch to tool's category, then scroll after render
                         handleCategorySelect(tool.category);
-                        // Wait for React to commit the category re-render before polling
-                        setTimeout(() => {
-                          let attempts = 0;
-                          const poll = setInterval(() => {
-                            attempts++;
-                            if (scrollToTool() || attempts > 50) clearInterval(poll);
-                          }, 150);
-                        }, 300);
+                        setScrollToToolId(tool.id);
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4 }}>
