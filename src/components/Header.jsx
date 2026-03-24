@@ -76,8 +76,13 @@ export default function Header({
             initial={booted ? false : { opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            style={{ display: "flex", alignItems: "baseline", gap: 10 }}
+            style={{ display: "flex", alignItems: "center", gap: 10 }}
           >
+            <img
+              src="/logo.png"
+              alt="AIArsenal"
+              style={{ width: 28, height: 28, borderRadius: 6 }}
+            />
             <h1 style={{
               margin: 0, fontFamily: "monospace", fontWeight: 700,
               fontSize: "clamp(16px, 2.5vw, 22px)", color: "var(--text-strong)",

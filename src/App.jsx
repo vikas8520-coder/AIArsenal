@@ -20,6 +20,7 @@ import MyStack from "./components/MyStack";
 import ComparisonMatrix from "./components/ComparisonMatrix";
 import SharePanel from "./components/SharePanel";
 import CostCalculator from "./components/CostCalculator";
+import LandingHero from "./components/LandingHero";
 
 // Group tools by subcategory, sponsored tools float to top
 function groupBySubcategory(tools) {
@@ -230,6 +231,9 @@ export default function App() {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)", position: "relative" }}>
+      {/* Landing Hero (first visit) */}
+      <LandingHero accent={activeCatObj.color} onExplore={() => {}} />
+
       {/* Ambient layer */}
       <AmbientBackground
         orb1={activeCatObj.orb1}

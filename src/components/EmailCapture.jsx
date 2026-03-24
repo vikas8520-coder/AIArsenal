@@ -64,6 +64,7 @@ export default function EmailCapture({ accent = "#00f0ff", compact = false }) {
 
   return (
     <motion.div
+      data-email-capture
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}

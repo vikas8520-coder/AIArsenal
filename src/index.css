@@ -302,6 +302,15 @@ body {
   );
 }
 
+/* ── Landing Hero ── */
+.landing-hero {
+  animation: fade-up 0.3s var(--ease-premium) forwards;
+}
+.landing-cta-primary:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
 /* ── Mobile Responsiveness ── */
 @media (max-width: 768px) {
   /* Sidebar becomes overlay */
