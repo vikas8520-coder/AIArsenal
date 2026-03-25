@@ -79,13 +79,13 @@ export default function Header({
             style={{ display: "flex", alignItems: "center", gap: 10 }}
           >
             <div style={{
-              width: 34, height: 34, borderRadius: 8, overflow: "hidden",
+              width: 42, height: 42, borderRadius: 10, overflow: "hidden",
               flexShrink: 0,
             }}>
               <img
                 src="/logo.png"
                 alt="AIArsenal"
-                style={{ width: 46, height: 46, marginTop: -6, marginLeft: -6, display: "block" }}
+                style={{ width: 56, height: 56, marginTop: -7, marginLeft: -7, display: "block" }}
               />
             </div>
             <h1 style={{
