@@ -27,7 +27,8 @@ function getToolUrl(tool) {
     url.searchParams.set("utm_campaign", "tools");
     return url.toString();
   }
-  return `https://${tool.url}`;
+  const raw = tool.url;
+  return raw.startsWith("http://") || raw.startsWith("https://") ? raw : `https://${raw}`;
 }
 
 function trackClick(tool) {
