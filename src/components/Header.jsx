@@ -78,11 +78,16 @@ export default function Header({
             transition={{ duration: 0.4 }}
             style={{ display: "flex", alignItems: "center", gap: 10 }}
           >
-            <img
-              src="/logo.png"
-              alt="AIArsenal"
-              style={{ width: 28, height: 28, borderRadius: 6 }}
-            />
+            <div style={{
+              width: 34, height: 34, borderRadius: 8, overflow: "hidden",
+              flexShrink: 0,
+            }}>
+              <img
+                src="/logo.png"
+                alt="AIArsenal"
+                style={{ width: 46, height: 46, marginTop: -6, marginLeft: -6, display: "block" }}
+              />
+            </div>
             <h1 style={{
               margin: 0, fontFamily: "monospace", fontWeight: 700,
               fontSize: "clamp(16px, 2.5vw, 22px)", color: "var(--text-strong)",
