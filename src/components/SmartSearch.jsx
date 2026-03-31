@@ -633,8 +633,9 @@ export default function SmartSearch({
       e.preventDefault();
       if (e.metaKey || e.ctrlKey) {
         runSolve();
-      } else if (value.trim()) {
+      } else if (value.trim() && !comparison) {
         // Dismiss dropdown so user sees full results grid
+        // (but keep dropdown open for comparison queries like "cursor vs gamma")
         setDropdownDismissed(true);
         setInstantResults([]);
         setSemanticResults([]);
