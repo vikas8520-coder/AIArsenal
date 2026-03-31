@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import MiniSearch from "minisearch";
 
 /**
@@ -23,12 +23,13 @@ function buildIndex(tools) {
       },
       fuzzy: 0.2,
       prefix: true,
-      combineWith: "AND",
+      // Use OR so multi-word queries return results even if not all terms match.
+      // MiniSearch naturally scores docs with more term matches higher.
+      combineWith: "OR",
     },
   });
 
   const docs = tools.map((t, i) => ({
-    // MiniSearch needs a unique numeric or string id field
     id: i,
     toolId: t.id,
     name: t.name,
@@ -57,8 +58,10 @@ function getIndex(tools) {
 
 /**
  * Search and rank tools against a query string using MiniSearch.
- * Supports fuzzy matching (typo tolerance), prefix search, and
- * field-weighted scoring.
+ *
+ * Uses OR combination so multi-word queries like "chatbot framework free tier"
+ * return results matching any terms, ranked by how many terms match and
+ * field weight. Fuzzy matching handles typos.
  *
  * @param {Array} tools - full tools array
  * @param {string} query - user search string
@@ -68,40 +71,39 @@ export function searchTools(tools, query) {
   if (!query.trim()) return tools;
 
   const index = getIndex(tools);
-  const results = index.search(query.trim());
+
+  // First try with default settings (OR + fuzzy 0.2)
+  let results = index.search(query.trim());
 
   if (results.length === 0) {
-    // Fallback: try with higher fuzzy tolerance for very short/typo queries
-    const fuzzyResults = index.search(query.trim(), { fuzzy: 0.35 });
-    if (fuzzyResults.length > 0) {
-      const idSet = new Set(fuzzyResults.map((r) => r.id));
-      return tools.filter((_, i) => idSet.has(i));
-    }
-    return [];
+    // Fallback: higher fuzzy tolerance for typos
+    results = index.search(query.trim(), { fuzzy: 0.35 });
   }
 
+  if (results.length === 0) return [];
+
+  // Filter out very low-scoring results (noise from OR mode)
+  // Use 15% of top score as threshold
+  const topScore = results[0].score;
+  const threshold = topScore * 0.15;
+  const filtered = results.filter((r) => r.score >= threshold);
+
   // Map MiniSearch results back to tool objects, preserving score order
-  const idSet = new Map(results.map((r) => [r.id, r.score]));
+  const scoreMap = new Map(filtered.map((r) => [r.id, r.score]));
   return tools
-    .filter((_, i) => idSet.has(i))
+    .filter((_, i) => scoreMap.has(i))
     .sort((a, b) => {
       const ai = tools.indexOf(a);
       const bi = tools.indexOf(b);
-      return (idSet.get(bi) || 0) - (idSet.get(ai) || 0);
+      return (scoreMap.get(bi) || 0) - (scoreMap.get(ai) || 0);
     });
 }
 
 /**
  * Get autocomplete suggestions for a partial query.
- *
- * @param {Array} tools - full tools array
- * @param {string} query - partial search string
- * @param {number} limit - max suggestions
- * @returns {Array<{suggestion: string, score: number}>}
  */
 export function getAutoSuggestions(tools, query, limit = 6) {
   if (!query.trim() || query.trim().length < 2) return [];
-
   const index = getIndex(tools);
   return index.autoSuggest(query.trim(), {
     fuzzy: 0.2,
