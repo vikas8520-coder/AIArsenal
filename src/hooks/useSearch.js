@@ -1,50 +1,64 @@
 "use client";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
+import MiniSearch from "minisearch";
 
 /**
- * Score a single tool against a single search term.
- * Returns 0 if no match (tool should be excluded).
- * Higher score = better match.
+ * Build a MiniSearch index from tools array.
+ * Fields are weighted to match the original scoring priority:
+ *   name (highest) > tags > subcategory > company > category > desc > free
  */
-function scoreToolForTerm(tool, term) {
-  const t = term.toLowerCase();
-  const name = tool.name.toLowerCase();
+function buildIndex(tools) {
+  const ms = new MiniSearch({
+    fields: ["name", "tags_str", "subcategory", "company", "category", "desc", "free"],
+    storeFields: ["id"],
+    searchOptions: {
+      boost: {
+        name: 10,
+        tags_str: 5,
+        subcategory: 4,
+        company: 3.5,
+        category: 2.5,
+        desc: 2,
+        free: 1,
+      },
+      fuzzy: 0.2,
+      prefix: true,
+      combineWith: "AND",
+    },
+  });
 
-  // Name matches — highest priority
-  if (name === t) return 100;
-  if (name.startsWith(t)) return 80;
-  if (name.includes(t)) return 60;
+  const docs = tools.map((t, i) => ({
+    // MiniSearch needs a unique numeric or string id field
+    id: i,
+    toolId: t.id,
+    name: t.name,
+    tags_str: (t.tags || []).join(" "),
+    subcategory: t.subcategory || "",
+    company: t.company || "",
+    category: t.category || "",
+    desc: t.desc || "",
+    free: t.free || "",
+  }));
 
-  // Tag matches
-  const tagExact = tool.tags.some((tag) => tag.toLowerCase() === t);
-  if (tagExact) return 55;
-  const tagContains = tool.tags.some((tag) => tag.toLowerCase().includes(t));
-  if (tagContains) return 45;
+  ms.addAll(docs);
+  return ms;
+}
 
-  // Subcategory
-  if (tool.subcategory.toLowerCase().includes(t)) return 40;
+// Module-level cache so we don't rebuild on every render
+let cachedIndex = null;
+let cachedTools = null;
 
-  // Company
-  if (tool.company.toLowerCase().includes(t)) return 35;
-
-  // Category
-  if (tool.category.toLowerCase().includes(t)) return 25;
-
-  // Description
-  if (tool.desc.toLowerCase().includes(t)) return 20;
-
-  // Free tier details (lowest priority)
-  if (tool.free.toLowerCase().includes(t)) return 10;
-
-  return 0; // no match
+function getIndex(tools) {
+  if (cachedTools === tools && cachedIndex) return cachedIndex;
+  cachedIndex = buildIndex(tools);
+  cachedTools = tools;
+  return cachedIndex;
 }
 
 /**
- * Search and rank tools against a query string.
- *
- * Multi-word AND logic: all space-separated terms must match at least one
- * field per tool. Scores are summed across terms and results sorted
- * descending by score (ties broken alphabetically by name).
+ * Search and rank tools against a query string using MiniSearch.
+ * Supports fuzzy matching (typo tolerance), prefix search, and
+ * field-weighted scoring.
  *
  * @param {Array} tools - full tools array
  * @param {string} query - user search string
@@ -53,37 +67,47 @@ function scoreToolForTerm(tool, term) {
 export function searchTools(tools, query) {
   if (!query.trim()) return tools;
 
-  const terms = query
-    .trim()
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(Boolean);
+  const index = getIndex(tools);
+  const results = index.search(query.trim());
 
-  const scored = [];
-
-  for (const tool of tools) {
-    let totalScore = 0;
-    let allTermsMatch = true;
-
-    for (const term of terms) {
-      const s = scoreToolForTerm(tool, term);
-      if (s === 0) {
-        allTermsMatch = false;
-        break;
-      }
-      totalScore += s;
+  if (results.length === 0) {
+    // Fallback: try with higher fuzzy tolerance for very short/typo queries
+    const fuzzyResults = index.search(query.trim(), { fuzzy: 0.35 });
+    if (fuzzyResults.length > 0) {
+      const idSet = new Set(fuzzyResults.map((r) => r.id));
+      return tools.filter((_, i) => idSet.has(i));
     }
-
-    if (allTermsMatch) {
-      scored.push({ tool, score: totalScore });
-    }
+    return [];
   }
 
-  scored.sort(
-    (a, b) => b.score - a.score || a.tool.name.localeCompare(b.tool.name)
-  );
+  // Map MiniSearch results back to tool objects, preserving score order
+  const idSet = new Map(results.map((r) => [r.id, r.score]));
+  return tools
+    .filter((_, i) => idSet.has(i))
+    .sort((a, b) => {
+      const ai = tools.indexOf(a);
+      const bi = tools.indexOf(b);
+      return (idSet.get(bi) || 0) - (idSet.get(ai) || 0);
+    });
+}
 
-  return scored.map((s) => s.tool);
+/**
+ * Get autocomplete suggestions for a partial query.
+ *
+ * @param {Array} tools - full tools array
+ * @param {string} query - partial search string
+ * @param {number} limit - max suggestions
+ * @returns {Array<{suggestion: string, score: number}>}
+ */
+export function getAutoSuggestions(tools, query, limit = 6) {
+  if (!query.trim() || query.trim().length < 2) return [];
+
+  const index = getIndex(tools);
+  return index.autoSuggest(query.trim(), {
+    fuzzy: 0.2,
+    prefix: true,
+    boost: { name: 10, tags_str: 3 },
+  }).slice(0, limit);
 }
 
 /**

@@ -25,6 +25,13 @@ export default function sitemap() {
     priority: 0.7,
   }));
 
+  const alternativesUrls = toolSlugs.map((slug) => ({
+    url: `${BASE_URL}/alternatives/${slug}`,
+    lastModified: new Date().toISOString(),
+    changeFrequency: "weekly",
+    priority: 0.7,
+  }));
+
   return [
     {
       url: BASE_URL,
@@ -34,5 +41,6 @@ export default function sitemap() {
     },
     ...categoryUrls,
     ...toolUrls,
+    ...alternativesUrls,
   ];
 }
