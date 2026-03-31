@@ -1,28 +1,25 @@
 {
-  "name": "ai-intelligence-nexus",
-  "version": "1.0.0",
+  "name": "aiarsenal",
+  "version": "2.0.0",
+  "private": true,
   "type": "module",
-  "description": "185+ curated free AI tools, credits, compute & systems",
+  "description": "194+ curated free AI tools with AI-powered stack recommendations",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
     "embeddings": "node scripts/generate-embeddings.mjs"
   },
   "dependencies": {
     "@huggingface/transformers": "^3.8.1",
+    "@tailwindcss/postcss": "^4.2.2",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.4",
     "framer-motion": "^11.15.0",
+    "next": "^16.2.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "tailwind-merge": "^2.6.0"
-  },
-  "devDependencies": {
-    "@tailwindcss/vite": "^4.0.0",
-    "@vitejs/plugin-react": "^4.3.4",
-    "tailwindcss": "^4.0.0",
-    "vite": "^6.0.0",
-    "vite-plugin-pwa": "^1.2.0"
+    "tailwind-merge": "^2.6.0",
+    "tailwindcss": "^4.0.0"
   }
 }

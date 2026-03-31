@@ -1,3 +1,4 @@
+"use client";
 import { useState, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getCategoryById } from "../data/categories";

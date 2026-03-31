@@ -1,26 +1,28 @@
+"use client";
+
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { TOOLS } from "./data/tools";
-import { searchTools } from "./hooks/useSearch";
-import { CATEGORIES, getCategoryById } from "./data/categories";
-import useBookmarks from "./hooks/useBookmarks";
-import { decodeStack } from "./utils/stackUrl";
-import AmbientBackground from "./components/AmbientBackground";
-import Sidebar from "./components/Sidebar";
-import Header from "./components/Header";
-import ToolCard, { SkeletonCard } from "./components/ToolCard";
-import CommandPalette from "./components/CommandPalette";
-import CategoryHero from "./components/CategoryHero";
-import Spotlight from "./components/Spotlight";
-import EmptyState from "./components/EmptyState";
-import EmailCapture from "./components/EmailCapture";
-import FeedbackWidget from "./components/FeedbackWidget";
-import ToolSubmitForm from "./components/ToolSubmitForm";
-import MyStack from "./components/MyStack";
-import ComparisonMatrix from "./components/ComparisonMatrix";
-import SharePanel from "./components/SharePanel";
-import CostCalculator from "./components/CostCalculator";
-import LandingHero from "./components/LandingHero";
+import { TOOLS } from "@/src/data/tools";
+import { searchTools } from "@/src/hooks/useSearch";
+import { CATEGORIES, getCategoryById } from "@/src/data/categories";
+import useBookmarks from "@/src/hooks/useBookmarks";
+import { decodeStack } from "@/src/utils/stackUrl";
+import AmbientBackground from "@/src/components/AmbientBackground";
+import Sidebar from "@/src/components/Sidebar";
+import Header from "@/src/components/Header";
+import ToolCard, { SkeletonCard } from "@/src/components/ToolCard";
+import CommandPalette from "@/src/components/CommandPalette";
+import CategoryHero from "@/src/components/CategoryHero";
+import Spotlight from "@/src/components/Spotlight";
+import EmptyState from "@/src/components/EmptyState";
+import EmailCapture from "@/src/components/EmailCapture";
+import FeedbackWidget from "@/src/components/FeedbackWidget";
+import ToolSubmitForm from "@/src/components/ToolSubmitForm";
+import MyStack from "@/src/components/MyStack";
+import ComparisonMatrix from "@/src/components/ComparisonMatrix";
+import SharePanel from "@/src/components/SharePanel";
+import CostCalculator from "@/src/components/CostCalculator";
+import LandingHero from "@/src/components/LandingHero";
 
 // Group tools by subcategory, sponsored tools float to top
 function groupBySubcategory(tools) {
@@ -35,7 +37,7 @@ function groupBySubcategory(tools) {
   return map;
 }
 
-export default function App() {
+export default function DirectoryClient() {
   const [search, setSearch] = useState("");
   const [activeCat, setActiveCat] = useState("all");
   const [filterOSS, setFilterOSS] = useState(false);
@@ -112,16 +114,13 @@ export default function App() {
   // Scroll to tool after category switch renders
   useEffect(() => {
     if (!scrollToToolId) return;
-    // Use requestAnimationFrame to wait for React DOM commit, then scroll
     let cancelled = false;
     const tryScroll = () => {
       const el = document.getElementById(`tool-${scrollToToolId}`);
       if (!el) return false;
       const main = el.closest("main");
       if (main) {
-        // Reset scroll to top first so offset calc is accurate
         main.scrollTop = 0;
-        // Wait one more frame for layout to settle after scroll reset
         requestAnimationFrame(() => {
           if (cancelled) return;
           const mainRect = main.getBoundingClientRect();
@@ -132,14 +131,12 @@ export default function App() {
       } else {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
       }
-      // Highlight
       el.style.boxShadow = "0 0 0 2px #00f0ff";
       el.style.transition = "box-shadow 0.3s";
       setTimeout(() => { el.style.boxShadow = ""; }, 2500);
       return true;
     };
 
-    // Poll: wait for element to appear in DOM (animation skipped, but React still needs to render)
     let attempts = 0;
     const poll = setInterval(() => {
       attempts++;
@@ -213,7 +210,7 @@ export default function App() {
     });
   }, []);
 
-  // Category switch with brief loading effect (skipped when scrolling to a tool)
+  // Category switch with brief loading effect
   const handleCategorySelect = useCallback((id, skipAnimation) => {
     setActiveCat(id);
     setSearch("");

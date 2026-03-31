@@ -1,0 +1,55 @@
+import { NextResponse } from "next/server";
+
+const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
+const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
+const TABLE_NAME = "Leads";
+
+const headers = {
+  Authorization: `Bearer ${AIRTABLE_API_KEY}`,
+  "Content-Type": "application/json",
+};
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
+export async function OPTIONS() {
+  return new Response(null, { status: 200, headers: corsHeaders });
+}
+
+export async function POST(request) {
+  const { email, source } = await request.json();
+
+  if (!email) {
+    return NextResponse.json({ success: false, error: "email is required" }, { status: 400, headers: corsHeaders });
+  }
+
+  const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(TABLE_NAME)}`;
+
+  try {
+    const airtableRes = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        records: [{
+          fields: {
+            email: email.slice(0, 200),
+            source: source || "unknown",
+            subscribed_at: new Date().toISOString(),
+          },
+        }],
+      }),
+    });
+
+    if (!airtableRes.ok) {
+      const err = await airtableRes.json();
+      return NextResponse.json({ success: false, error: err }, { status: 500, headers: corsHeaders });
+    }
+
+    return NextResponse.json({ success: true }, { headers: corsHeaders });
+  } catch {
+    return NextResponse.json({ success: false, error: "Failed to log lead" }, { status: 500, headers: corsHeaders });
+  }
+}

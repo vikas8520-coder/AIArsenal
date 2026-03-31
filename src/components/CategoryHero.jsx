@@ -1,3 +1,4 @@
+"use client";
 import { motion } from "framer-motion";
 import { TOOLS } from "../data/tools";
 import { CATEGORIES } from "../data/categories";

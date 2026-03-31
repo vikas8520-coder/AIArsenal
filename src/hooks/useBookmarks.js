@@ -1,3 +1,4 @@
+"use client";
 import { useState, useCallback, useMemo } from "react";
 import { TOOLS } from "../data/tools";
 
