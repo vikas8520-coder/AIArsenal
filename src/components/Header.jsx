@@ -136,6 +136,7 @@ export default function Header({
           filterOSS={filterOSS}
           onToggleOSS={onToggleOSS}
           onSelectCategory={onSelectCategory}
+          resultCount={resultCount}
         />
 
         {/* ⌘K pill */}

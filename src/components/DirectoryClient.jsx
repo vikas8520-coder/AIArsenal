@@ -262,7 +262,10 @@ export default function DirectoryClient() {
           resultCount={filtered.length}
           theme={theme}
           onToggleTheme={() => setTheme((v) => (v === "dark" ? "light" : "dark"))}
-          onSelectTool={(tool) => handleCategorySelect(tool.category)}
+          onSelectTool={(tool) => {
+            handleCategorySelect(tool.category, true);
+            setScrollToToolId(tool.id);
+          }}
           tools={TOOLS}
           selected={selected}
           onSelectStack={toggleTool}

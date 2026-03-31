@@ -448,7 +448,7 @@ function SectionHeader({ label, count, color }) {
 
 export default function SmartSearch({
   value, onChange, accent, onSelectTool, tools, selected, onSelectStack,
-  filterOSS, onToggleOSS, onSelectCategory, // New props for NL filters (#3)
+  filterOSS, onToggleOSS, onSelectCategory, resultCount = 0,
 }) {
   const [placeholder, setPlaceholder] = useState("");
   const phraseIdx = useRef(0);
@@ -460,7 +460,9 @@ export default function SmartSearch({
   const [error, setError] = useState(null);
   const [mode, setMode] = useState(null);
   const containerRef = useRef(null);
+  const inputRef = useRef(null);
   const debounceRef = useRef(null);
+  const [dropdownDismissed, setDropdownDismissed] = useState(false);
 
   // Hybrid results for auto-suggest (#1)
   const [instantResults, setInstantResults] = useState([]);
@@ -631,8 +633,24 @@ export default function SmartSearch({
       e.preventDefault();
       if (e.metaKey || e.ctrlKey) {
         runSolve();
+      } else if (value.trim()) {
+        // Dismiss dropdown so user sees full results grid
+        setDropdownDismissed(true);
+        setInstantResults([]);
+        setSemanticResults([]);
+        inputRef.current?.blur();
       }
     }
+  };
+
+  // Dismiss dropdown and navigate to tool in grid
+  const handleToolClick = (tool) => {
+    onSelectTool(tool);
+    setDropdownDismissed(true);
+    setInstantResults([]);
+    setSemanticResults([]);
+    setAiResults(null);
+    setMode(null);
   };
 
   // ── Use-case card click (#6) ──────────────────────────────────────────────
@@ -644,7 +662,7 @@ export default function SmartSearch({
   };
 
   const showDropdown =
-    focused && (
+    focused && !dropdownDismissed && (
       !value.trim() || // Empty = show use-case cards
       hasAutoResults || comparison || aiResults || loading || error ||
       (value.trim() && (isLong || isSemantic))
@@ -663,12 +681,14 @@ export default function SmartSearch({
           value={value}
           onChange={(e) => {
             onChange(e.target.value);
+            setDropdownDismissed(false);
             if (mode === "solve" || mode === "plan") {
               setAiResults(null);
               setMode(null);
             }
             setError(null);
           }}
+          ref={inputRef}
           onFocus={(e) => {
             setFocused(true);
             e.target.style.borderColor = `${accent}40`;
@@ -832,10 +852,28 @@ export default function SmartSearch({
                           key={tool.id}
                           tool={tool}
                           accent={accent}
-                          onClick={onSelectTool}
+                          onClick={handleToolClick}
                         />
                       ))}
                     </div>
+                    {/* View all results link */}
+                    {resultCount > instantResults.length && (
+                      <button
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setDropdownDismissed(true);
+                          inputRef.current?.blur();
+                        }}
+                        style={{
+                          width: "100%", padding: "8px 0", marginTop: 8,
+                          background: "none", border: "none", cursor: "pointer",
+                          fontFamily: "monospace", fontSize: 10, color: accent,
+                          textAlign: "center",
+                        }}
+                      >
+                        View all {resultCount} results ↓
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -862,7 +900,7 @@ export default function SmartSearch({
                           reason={reason}
                           score={score}
                           accent={accent}
-                          onClick={onSelectTool}
+                          onClick={handleToolClick}
                         />
                       ))}
                     </div>
@@ -914,7 +952,7 @@ export default function SmartSearch({
                 <SectionHeader label="AI RECOMMENDATIONS" count={aiResults.tools.length} color={accent} />
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   {aiResults.tools.map(({ tool, reason }) => (
-                    <ToolResultCard key={tool.id} tool={tool} reason={reason} accent={accent} onClick={onSelectTool} />
+                    <ToolResultCard key={tool.id} tool={tool} reason={reason} accent={accent} onClick={handleToolClick} />
                   ))}
                 </div>
               </div>
@@ -950,7 +988,7 @@ export default function SmartSearch({
                       {aiResults.plan.recommended.map(({ id, reason }) => {
                         const tool = TOOLS.find(t => t.id === id);
                         if (!tool) return null;
-                        return <ToolResultCard key={id} tool={tool} reason={reason} accent={accent} onClick={onSelectTool} />;
+                        return <ToolResultCard key={id} tool={tool} reason={reason} accent={accent} onClick={handleToolClick} />;
                       })}
                     </div>
                   </>
