@@ -34,7 +34,7 @@ export default function Header({
   onSelectCategory,
   bookmarkCount, onOpenStack,
   onOpenShare, hasSelected,
-  onOpenCalc,
+  onOpenCalc, onCompare,
 }) {
   const [booted, setBooted] = useState(() => {
     try { return !!localStorage.getItem("nexus-booted"); } catch { return false; }
@@ -137,6 +137,7 @@ export default function Header({
           onToggleOSS={onToggleOSS}
           onSelectCategory={onSelectCategory}
           resultCount={resultCount}
+          onCompare={onCompare}
         />
 
         {/* ⌘K pill */}

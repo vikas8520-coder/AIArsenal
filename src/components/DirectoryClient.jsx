@@ -266,6 +266,10 @@ export default function DirectoryClient() {
             handleCategorySelect(tool.category, true);
             setScrollToToolId(tool.id);
           }}
+          onCompare={(idA, idB) => {
+            setCompareSet(new Set([idA, idB]));
+            setCompareOpen(true);
+          }}
           tools={TOOLS}
           selected={selected}
           onSelectStack={toggleTool}

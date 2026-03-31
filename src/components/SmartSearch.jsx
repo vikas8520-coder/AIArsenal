@@ -448,7 +448,7 @@ function SectionHeader({ label, count, color }) {
 
 export default function SmartSearch({
   value, onChange, accent, onSelectTool, tools, selected, onSelectStack,
-  filterOSS, onToggleOSS, onSelectCategory, resultCount = 0,
+  filterOSS, onToggleOSS, onSelectCategory, resultCount = 0, onCompare,
 }) {
   const [placeholder, setPlaceholder] = useState("");
   const phraseIdx = useRef(0);
@@ -633,9 +633,13 @@ export default function SmartSearch({
       e.preventDefault();
       if (e.metaKey || e.ctrlKey) {
         runSolve();
-      } else if (value.trim() && !comparison) {
-        // Dismiss dropdown so user sees full results grid
-        // (but keep dropdown open for comparison queries like "cursor vs gamma")
+      } else if (value.trim() && comparison && onCompare) {
+        // "X vs Y" query → open full comparison modal
+        onCompare(comparison.toolA.id, comparison.toolB.id);
+        setDropdownDismissed(true);
+        inputRef.current?.blur();
+      } else if (value.trim()) {
+        // Regular search → dismiss dropdown, show full results grid
         setDropdownDismissed(true);
         setInstantResults([]);
         setSemanticResults([]);
