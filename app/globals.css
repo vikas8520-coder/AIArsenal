@@ -353,6 +353,27 @@ body {
 .landing-hero ::-webkit-scrollbar { width: 3px; }
 .landing-hero ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 99px; }
 
+/* ── Animated gradient background ── */
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  25% { background-position: 100% 0%; }
+  50% { background-position: 100% 100%; }
+  75% { background-position: 0% 100%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ── Custom cursor (desktop only) ── */
+@media (pointer: fine) {
+  .landing-hero { cursor: none; }
+  .landing-hero button,
+  .landing-hero a,
+  .landing-hero input { cursor: none; }
+  .landing-cursor { display: block; }
+}
+@media (pointer: coarse) {
+  .landing-cursor { display: none !important; }
+}
+
 /* ── Floating orb animation ── */
 @keyframes float {
   0%, 100% { transform: translateY(0px) rotate(0deg); }

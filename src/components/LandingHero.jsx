@@ -172,19 +172,29 @@ function EmailCTA({ accent }) {
   );
 }
 
-// ── GlassToolCard (upgraded glassmorphism) ─────────────────────────────────
+// ── GlassToolCard (3D tilt + glassmorphism) ────────────────────────────────
 function GlassToolCard({ tool, index, accent }) {
   const cat = getCategoryById(tool.category);
   const color = cat?.color || accent;
   const [hovered, setHovered] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
 
   const handleMouseMove = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    setMousePos({
-      x: ((e.clientX - rect.left) / rect.width) * 100,
-      y: ((e.clientY - rect.top) / rect.height) * 100,
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setMousePos({ x, y });
+    // 3D tilt: ±8deg based on mouse position
+    setTilt({
+      x: ((y - 50) / 50) * -8,
+      y: ((x - 50) / 50) * 8,
     });
+  };
+
+  const handleMouseLeave = () => {
+    setHovered(false);
+    setTilt({ x: 0, y: 0 });
   };
 
   return (
@@ -194,7 +204,7 @@ function GlassToolCard({ tool, index, accent }) {
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.6, delay: index * 0.07, ease: bounceEase }}
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseLeave={handleMouseLeave}
       onMouseMove={handleMouseMove}
       style={{
         background: "rgba(255,255,255,0.03)",
@@ -204,8 +214,12 @@ function GlassToolCard({ tool, index, accent }) {
         borderRadius: 16, padding: "20px 18px",
         cursor: "pointer", position: "relative",
         overflow: "hidden", minWidth: 0,
-        transition: "border-color 0.3s, transform 0.3s cubic-bezier(.6,.5,0,1.4)",
-        transform: hovered ? "translateY(-6px)" : "translateY(0)",
+        transition: "border-color 0.3s, transform 0.2s ease-out, box-shadow 0.3s",
+        transform: hovered
+          ? `perspective(600px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) translateY(-6px)`
+          : "perspective(600px) rotateX(0) rotateY(0) translateY(0)",
+        boxShadow: hovered ? `0 20px 40px ${color}15, 0 0 30px ${color}08` : "none",
+        transformStyle: "preserve-3d",
       }}
     >
       {/* Card spotlight glow (follows mouse) */}
@@ -328,6 +342,183 @@ function ToolMarquee() {
   );
 }
 
+// ── Blur-to-focus scroll reveal ────────────────────────────────────────────
+function ScrollReveal({ children, delay = 0 }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30, filter: "blur(10px)" }}
+      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: 0.7, delay, ease: bounceEase }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// ── Custom cursor ──────────────────────────────────────────────────────────
+function CustomCursor({ mouse, accent }) {
+  return (
+    <div
+      className="landing-cursor"
+      style={{
+        position: "fixed",
+        left: `${mouse.x}%`, top: `${mouse.y}%`,
+        width: 20, height: 20,
+        borderRadius: "50%",
+        border: `1.5px solid ${accent}60`,
+        pointerEvents: "none", zIndex: 220,
+        transform: "translate(-50%, -50%)",
+        transition: "width 0.2s, height 0.2s, border-color 0.2s",
+        mixBlendMode: "difference",
+        boxShadow: `0 0 15px ${accent}30`,
+      }}
+    />
+  );
+}
+
+// ── Interactive search demo ────────────────────────────────────────────────
+function SearchDemo({ accent }) {
+  const [demoQuery, setDemoQuery] = useState("");
+  const [demoPhase, setDemoPhase] = useState(0);
+  const phrases = ["free GPU compute", "coding assistant", "image generation"];
+  const demoResults = {
+    "free GPU compute": [
+      { name: "Kaggle Notebooks", cat: "Infrastructure", color: "#ff8a65" },
+      { name: "Google Colab", cat: "Infrastructure", color: "#ff8a65" },
+      { name: "Lightning.ai", cat: "Infrastructure", color: "#ff8a65" },
+    ],
+    "coding assistant": [
+      { name: "GitHub Copilot Free", cat: "Developer Tools", color: "#00ff88" },
+      { name: "Cursor", cat: "Developer Tools", color: "#00ff88" },
+      { name: "Continue.dev", cat: "Developer Tools", color: "#00ff88" },
+    ],
+    "image generation": [
+      { name: "Leonardo.Ai", cat: "Creative AI", color: "#ffd700" },
+      { name: "FLUX.1/2", cat: "Creative AI", color: "#ffd700" },
+      { name: "Ideogram", cat: "Creative AI", color: "#ffd700" },
+    ],
+  };
+
+  useEffect(() => {
+    let timeout;
+    const currentPhrase = phrases[demoPhase % phrases.length];
+    let charIdx = 0;
+
+    const typeChar = () => {
+      if (charIdx <= currentPhrase.length) {
+        setDemoQuery(currentPhrase.slice(0, charIdx));
+        charIdx++;
+        timeout = setTimeout(typeChar, 60);
+      } else {
+        // Hold, then clear and move to next
+        timeout = setTimeout(() => {
+          setDemoQuery("");
+          setDemoPhase((p) => p + 1);
+        }, 2500);
+      }
+    };
+    timeout = setTimeout(typeChar, 800);
+    return () => clearTimeout(timeout);
+  }, [demoPhase]);
+
+  const currentResults = demoResults[phrases[demoPhase % phrases.length]] || [];
+  const showResults = demoQuery.length > 3;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 1.2, duration: 0.6, ease: bounceEase }}
+      style={{
+        maxWidth: 440, width: "100%", margin: "0 auto 40px",
+      }}
+    >
+      {/* Fake search bar */}
+      <div style={{
+        background: "rgba(255,255,255,0.04)",
+        backdropFilter: "blur(12px)",
+        border: `1px solid ${accent}20`,
+        borderRadius: showResults ? "14px 14px 0 0" : 14,
+        padding: "12px 16px",
+        display: "flex", alignItems: "center", gap: 10,
+        transition: "border-radius 0.2s",
+      }}>
+        <span style={{ fontSize: 14, color: accent, opacity: 0.5 }}>⌕</span>
+        <span style={{
+          fontFamily: "var(--font-mono)", fontSize: 13,
+          color: demoQuery ? "var(--text-strong)" : "var(--text-faint)",
+        }}>
+          {demoQuery || "Search 194+ tools..."}
+          <span style={{
+            display: "inline-block", width: 2, height: "1em",
+            background: accent, marginLeft: 1, verticalAlign: "middle",
+            animation: "blink 1s step-end infinite",
+          }} />
+        </span>
+        <span style={{
+          marginLeft: "auto", fontFamily: "var(--font-mono)", fontSize: 9,
+          color: "var(--text-faint)", padding: "2px 6px",
+          border: "1px solid var(--border)", borderRadius: 4,
+        }}>
+          ⌘K
+        </span>
+      </div>
+
+      {/* Fake results dropdown */}
+      <AnimatePresence>
+        {showResults && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              background: "rgba(10,10,10,0.95)",
+              backdropFilter: "blur(16px)",
+              border: `1px solid ${accent}15`,
+              borderTop: "none",
+              borderRadius: "0 0 14px 14px",
+              overflow: "hidden",
+            }}
+          >
+            {currentResults.map((r, i) => (
+              <motion.div
+                key={r.name}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.08, duration: 0.3 }}
+                style={{
+                  padding: "10px 16px",
+                  display: "flex", alignItems: "center", gap: 10,
+                  borderTop: i > 0 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                }}
+              >
+                <span style={{
+                  width: 6, height: 6, borderRadius: "50%",
+                  background: r.color, flexShrink: 0,
+                }} />
+                <span style={{
+                  fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600,
+                  color: "var(--text-strong)",
+                }}>
+                  {r.name}
+                </span>
+                <span style={{
+                  marginLeft: "auto", fontFamily: "var(--font-mono)", fontSize: 9,
+                  color: r.color, opacity: 0.7,
+                }}>
+                  {r.cat}
+                </span>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
 // ── Section Divider (animated line) ────────────────────────────────────────
 function SectionDivider({ color = "var(--border)" }) {
   return (
@@ -444,14 +635,25 @@ export default function LandingHero({ accent = "#00f0ff", onExplore }) {
         overflow: "hidden",
       }}
     >
+      {/* Custom cursor */}
+      <CustomCursor mouse={mouse} accent={accent} />
+
       {/* Scroll progress bar */}
       <motion.div
         style={{
           position: "fixed", top: 0, left: 0, zIndex: 210,
           height: 2, width: progressWidth,
-          background: `linear-gradient(90deg, ${accent}, #b388ff)`,
+          background: `linear-gradient(90deg, ${accent}, #b388ff, #ff6b9d)`,
         }}
       />
+
+      {/* Animated gradient background */}
+      <div style={{
+        position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
+        background: `linear-gradient(135deg, #0a0a0a 0%, #0d0a14 30%, #0a0a0a 60%, #0a100e 90%)`,
+        backgroundSize: "400% 400%",
+        animation: "gradientShift 15s ease infinite",
+      }} />
 
       {/* Mouse-follow spotlight */}
       <div style={{
@@ -556,6 +758,9 @@ export default function LandingHero({ accent = "#00f0ff", onExplore }) {
             and build your perfect stack in minutes.
           </motion.p>
 
+          {/* Interactive search demo */}
+          <SearchDemo accent={accent} />
+
           {/* CTA buttons with animated borders */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -613,10 +818,10 @@ export default function LandingHero({ accent = "#00f0ff", onExplore }) {
               flexWrap: "wrap", marginBottom: 48,
             }}
           >
-            <StatBlock value={<AnimatedNumber target={STATS.total} suffix="+" />} label="AI Tools" color={accent} />
-            <StatBlock value={<AnimatedNumber target={categoryCount} />} label="Categories" color="#ff6b9d" />
-            <StatBlock value={<AnimatedNumber target={STATS.oss} suffix="+" />} label="Open Source" color="#00ff88" />
-            <StatBlock value={<AnimatedNumber target={uniqueCompanies} suffix="+" />} label="Companies" color="#ffd700" />
+            <StatBlock value={<AnimatedNumber target={STATS.total} suffix="+" />} label="AI Tools" color={accent} index={0} />
+            <StatBlock value={<AnimatedNumber target={categoryCount} />} label="Categories" color="#ff6b9d" index={1} />
+            <StatBlock value={<AnimatedNumber target={STATS.oss} suffix="+" />} label="Open Source" color="#00ff88" index={2} />
+            <StatBlock value={<AnimatedNumber target={uniqueCompanies} suffix="+" />} label="Companies" color="#ffd700" index={3} />
           </motion.div>
 
           {/* Tool marquee */}
@@ -657,11 +862,8 @@ export default function LandingHero({ accent = "#00f0ff", onExplore }) {
           padding: "20px 24px 80px", maxWidth: 900,
           width: "100%", margin: "0 auto",
         }}>
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.6, ease: bounceEase }}
+          <ScrollReveal>
+          <div
             style={{ textAlign: "center", marginBottom: 44 }}
           >
             <span style={{
@@ -690,7 +892,8 @@ export default function LandingHero({ accent = "#00f0ff", onExplore }) {
             }}>
               A taste of what you'll find inside
             </p>
-          </motion.div>
+          </div>
+          </ScrollReveal>
 
           <div style={{
             display: "grid",
@@ -832,10 +1035,24 @@ export default function LandingHero({ accent = "#00f0ff", onExplore }) {
   );
 }
 
-// ── StatBlock ──────────────────────────────────────────────────────────────
-function StatBlock({ value, label, color }) {
+// ── StatBlock (with directional entrance) ──────────────────────────────────
+function StatBlock({ value, label, color, index = 0 }) {
+  const directions = [
+    { x: -30, y: 0 },   // from left
+    { x: 0, y: -30 },   // from top
+    { x: 0, y: 30 },    // from bottom
+    { x: 30, y: 0 },    // from right
+  ];
+  const dir = directions[index % 4];
+
   return (
-    <div style={{ textAlign: "center" }}>
+    <motion.div
+      initial={{ opacity: 0, x: dir.x, y: dir.y, scale: 0.8 }}
+      whileInView={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6, delay: index * 0.1, ease: bounceEase }}
+      style={{ textAlign: "center" }}
+    >
       <div style={{
         fontFamily: "var(--font-mono)", fontWeight: 800,
         fontSize: 34, color, lineHeight: 1,
@@ -850,6 +1067,6 @@ function StatBlock({ value, label, color }) {
       }}>
         {label}
       </div>
-    </div>
+    </motion.div>
   );
 }
