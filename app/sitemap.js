@@ -1,5 +1,6 @@
 import { TOOLS } from "@/src/data/tools";
 import { CATEGORIES } from "@/src/data/categories";
+import { BLOG_POSTS } from "@/src/data/blog-posts";
 import { getAllToolSlugs, getToolBySlug, getCategorySlug } from "@/src/lib/tools";
 import { slugify } from "@/src/utils/slugify";
 
@@ -32,6 +33,21 @@ export default function sitemap() {
     priority: 0.7,
   }));
 
+  const blogUrls = [
+    {
+      url: `${BASE_URL}/blog`,
+      lastModified: new Date().toISOString(),
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    ...BLOG_POSTS.map((post) => ({
+      url: `${BASE_URL}/blog/${post.slug}`,
+      lastModified: post.date,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    })),
+  ];
+
   return [
     {
       url: BASE_URL,
@@ -39,6 +55,7 @@ export default function sitemap() {
       changeFrequency: "daily",
       priority: 1.0,
     },
+    ...blogUrls,
     ...categoryUrls,
     ...toolUrls,
     ...alternativesUrls,
