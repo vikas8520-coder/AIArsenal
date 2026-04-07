@@ -181,6 +181,17 @@ export default function Header({
           </button>
         )}
 
+        {/* Blog */}
+        <a
+          href="/blog"
+          className="hide-mobile"
+          style={{ ...pillStyle, textDecoration: "none" }}
+          onMouseEnter={hoverOn}
+          onMouseLeave={hoverOff}
+        >
+          BLOG
+        </a>
+
         {/* Budget */}
         <button
           onClick={onOpenCalc}
