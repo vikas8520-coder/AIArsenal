@@ -124,16 +124,26 @@ export default function SharePanel({ open, onClose, selectedIds, accent = "#00f0
             }}
           />
 
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 61,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 20,
+              pointerEvents: "none",
+            }}
+          >
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
             style={{
-              position: "fixed", top: "50%", left: "50%",
-              transform: "translate(-50%, -50%)",
-              zIndex: 61,
-              width: 340, borderRadius: 14,
+              pointerEvents: "auto",
+              width: 340, maxWidth: "100%", borderRadius: 14,
               background: "var(--surface-3)",
               backdropFilter: "blur(24px)",
               border: "1px solid var(--border-bright)",
@@ -201,6 +211,7 @@ export default function SharePanel({ open, onClose, selectedIds, accent = "#00f0
               </button>
             </div>
           </motion.div>
+          </div>
         </>
       )}
     </AnimatePresence>

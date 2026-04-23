@@ -33,17 +33,27 @@ export default function ComparisonMatrix({ open, onClose, compareIds, accent = "
             }}
           />
 
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 61,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 20,
+              pointerEvents: "none",
+            }}
+          >
           <motion.div
             initial={{ opacity: 0, y: 30, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.95 }}
             transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
             style={{
-              position: "fixed", top: "50%", left: "50%",
-              transform: "translate(-50%, -50%)",
-              zIndex: 61,
+              pointerEvents: "auto",
               width: Math.min(tools.length * 220 + 140, 960),
-              maxWidth: "95vw", maxHeight: "85vh",
+              maxWidth: "100%", maxHeight: "85vh",
               borderRadius: 14,
               background: "var(--surface-3)",
               backdropFilter: "blur(24px)",
@@ -142,6 +152,7 @@ export default function ComparisonMatrix({ open, onClose, compareIds, accent = "
               </table>
             </div>
           </motion.div>
+          </div>
         </>
       )}
     </AnimatePresence>
