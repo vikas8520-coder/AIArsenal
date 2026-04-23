@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { getCategoryById } from "../data/categories";
 import { getToolSlug } from "../lib/tools";
+import { getAttributes } from "../data/tool-attributes";
 
 function trackCompareClick(tool) {
   if (typeof window !== "undefined" && window.plausible) {
@@ -37,6 +38,103 @@ function formatVal(tool, key) {
   if (key === "oss") return tool.oss ? "Yes ✓" : "No";
   if (key === "tags") return (tool.tags || []).map((t) => `#${t}`).join(", ");
   return tool[key] || "—";
+}
+
+function ToolVerdict({ tool, color, attrs }) {
+  const bestFor = attrs?.bestFor || [
+    `${tool.desc}`,
+    `Free tier: ${tool.free}`,
+    ...(tool.oss ? ["Open source / self-hostable"] : []),
+  ];
+  const notFor = attrs?.notFor || [];
+
+  return (
+    <div>
+      <div
+        style={{
+          fontFamily: "monospace",
+          fontSize: 11,
+          fontWeight: 700,
+          color,
+          marginBottom: 6,
+          letterSpacing: 0.5,
+        }}
+      >
+        Pick {tool.name} if…
+      </div>
+      <ul
+        style={{
+          margin: 0,
+          padding: 0,
+          listStyle: "none",
+          display: "flex",
+          flexDirection: "column",
+          gap: 6,
+          marginBottom: notFor.length > 0 ? 14 : 0,
+        }}
+      >
+        {bestFor.map((b, i) => (
+          <li
+            key={i}
+            style={{
+              fontSize: 12,
+              color: "var(--text-default)",
+              display: "flex",
+              gap: 8,
+              lineHeight: 1.5,
+            }}
+          >
+            <span style={{ color, flexShrink: 0 }}>▸</span>
+            <span>{b}</span>
+          </li>
+        ))}
+      </ul>
+      {notFor.length > 0 && (
+        <>
+          <div
+            style={{
+              fontFamily: "monospace",
+              fontSize: 10,
+              fontWeight: 700,
+              color: "var(--text-faint)",
+              marginBottom: 6,
+              letterSpacing: 0.5,
+            }}
+          >
+            Skip it if…
+          </div>
+          <ul
+            style={{
+              margin: 0,
+              padding: 0,
+              listStyle: "none",
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+            }}
+          >
+            {notFor.map((n, i) => (
+              <li
+                key={i}
+                style={{
+                  fontSize: 11.5,
+                  color: "var(--text-faint)",
+                  display: "flex",
+                  gap: 8,
+                  lineHeight: 1.5,
+                }}
+              >
+                <span style={{ color: "var(--text-faint)", flexShrink: 0 }}>
+                  ✕
+                </span>
+                <span>{n}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  );
 }
 
 function ToolColumn({ tool, color }) {
@@ -211,6 +309,8 @@ export default function ComparePageClient({ toolA, toolB, related }) {
   const catB = getCategoryById(toolB.category);
   const colorA = catA?.color || "#00f0ff";
   const colorB = catB?.color || "#a855f7";
+  const attrsA = getAttributes(toolA.id);
+  const attrsB = getAttributes(toolB.id);
 
   return (
     <div
@@ -477,104 +577,8 @@ export default function ComparePageClient({ toolA, toolB, related }) {
             gap: 16,
           }}
         >
-          <div>
-            <div
-              style={{
-                fontFamily: "monospace",
-                fontSize: 11,
-                fontWeight: 700,
-                color: colorA,
-                marginBottom: 6,
-                letterSpacing: 0.5,
-              }}
-            >
-              Pick {toolA.name} if…
-            </div>
-            <ul
-              style={{
-                margin: 0,
-                padding: 0,
-                listStyle: "none",
-                display: "flex",
-                flexDirection: "column",
-                gap: 6,
-              }}
-            >
-              <li style={{ fontSize: 12, color: "var(--text-default)", display: "flex", gap: 8 }}>
-                <span style={{ color: colorA }}>▸</span>
-                <span>
-                  You need: <strong>{toolA.desc.toLowerCase()}</strong>
-                </span>
-              </li>
-              <li style={{ fontSize: 12, color: "var(--text-default)", display: "flex", gap: 8 }}>
-                <span style={{ color: colorA }}>▸</span>
-                <span>
-                  Free tier matters: <strong>{toolA.free}</strong>
-                </span>
-              </li>
-              {toolA.oss && (
-                <li style={{ fontSize: 12, color: "var(--text-default)", display: "flex", gap: 8 }}>
-                  <span style={{ color: colorA }}>▸</span>
-                  <span>You want open source / self-hostable</span>
-                </li>
-              )}
-              {toolA.privacy && !toolA.privacy.includes("⚠️") && (
-                <li style={{ fontSize: 12, color: "var(--text-default)", display: "flex", gap: 8 }}>
-                  <span style={{ color: colorA }}>▸</span>
-                  <span>Privacy: {toolA.privacy}</span>
-                </li>
-              )}
-            </ul>
-          </div>
-          <div>
-            <div
-              style={{
-                fontFamily: "monospace",
-                fontSize: 11,
-                fontWeight: 700,
-                color: colorB,
-                marginBottom: 6,
-                letterSpacing: 0.5,
-              }}
-            >
-              Pick {toolB.name} if…
-            </div>
-            <ul
-              style={{
-                margin: 0,
-                padding: 0,
-                listStyle: "none",
-                display: "flex",
-                flexDirection: "column",
-                gap: 6,
-              }}
-            >
-              <li style={{ fontSize: 12, color: "var(--text-default)", display: "flex", gap: 8 }}>
-                <span style={{ color: colorB }}>▸</span>
-                <span>
-                  You need: <strong>{toolB.desc.toLowerCase()}</strong>
-                </span>
-              </li>
-              <li style={{ fontSize: 12, color: "var(--text-default)", display: "flex", gap: 8 }}>
-                <span style={{ color: colorB }}>▸</span>
-                <span>
-                  Free tier matters: <strong>{toolB.free}</strong>
-                </span>
-              </li>
-              {toolB.oss && (
-                <li style={{ fontSize: 12, color: "var(--text-default)", display: "flex", gap: 8 }}>
-                  <span style={{ color: colorB }}>▸</span>
-                  <span>You want open source / self-hostable</span>
-                </li>
-              )}
-              {toolB.privacy && !toolB.privacy.includes("⚠️") && (
-                <li style={{ fontSize: 12, color: "var(--text-default)", display: "flex", gap: 8 }}>
-                  <span style={{ color: colorB }}>▸</span>
-                  <span>Privacy: {toolB.privacy}</span>
-                </li>
-              )}
-            </ul>
-          </div>
+          <ToolVerdict tool={toolA} color={colorA} attrs={attrsA} />
+          <ToolVerdict tool={toolB} color={colorB} attrs={attrsB} />
         </div>
         <div
           style={{

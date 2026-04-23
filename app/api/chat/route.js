@@ -66,6 +66,35 @@ ${Object.entries(BUDGET_BLUEPRINTS)
 COST STRATEGIES: ${COST_STRATEGIES.map((s) => s.name).join(", ")}`;
 }
 
+async function logQuestion(question, turn) {
+  const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
+  const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
+  if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) return;
+  const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent("ChatQuestions")}`;
+  try {
+    await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        records: [
+          {
+            fields: {
+              question: question.slice(0, 500),
+              turn,
+              asked_at: new Date().toISOString(),
+            },
+          },
+        ],
+      }),
+    });
+  } catch {
+    // Silent — logging must never block chat.
+  }
+}
+
 export async function POST(request) {
   if (!GEMINI_KEY) {
     return NextResponse.json(
@@ -82,6 +111,12 @@ export async function POST(request) {
       { error: "messages array required" },
       { status: 400, headers: corsHeaders }
     );
+  }
+
+  // Fire-and-forget log the latest user question.
+  const lastUser = [...messages].reverse().find((m) => m.role === "user");
+  if (lastUser?.content) {
+    logQuestion(lastUser.content, messages.length);
   }
 
   const systemPrompt = buildSystemPrompt();

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { findSimilarTools } from "@/src/utils/similarTools";
 import { TOOLS } from "@/src/data/tools";
 import { getCategoryById } from "@/src/data/categories";
+import { getAttributes } from "@/src/data/tool-attributes";
 import { getToolSlug } from "@/src/lib/tools";
 
 export default function ToolPageClient({ tool }) {
@@ -41,6 +42,7 @@ export default function ToolPageClient({ tool }) {
 
   const cat = getCategoryById(tool.category);
   const toolUrl = tool.url?.startsWith("http") ? tool.url : `https://${tool.url}`;
+  const attrs = getAttributes(tool.id);
 
   return (
     <div
@@ -223,6 +225,102 @@ export default function ToolPageClient({ tool }) {
               <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 }}>
                 {tool.quickStart}
               </p>
+            </div>
+          )}
+
+          {attrs && (attrs.bestFor?.length > 0 || attrs.notFor?.length > 0) && (
+            <div
+              style={{
+                marginTop: 20,
+                paddingTop: 16,
+                borderTop: "1px solid var(--border)",
+                display: "grid",
+                gridTemplateColumns: attrs.notFor?.length ? "1fr 1fr" : "1fr",
+                gap: 16,
+              }}
+            >
+              {attrs.bestFor?.length > 0 && (
+                <div>
+                  <h3
+                    style={{
+                      fontFamily: "var(--font-mono)",
+                      fontSize: 11,
+                      color: cat?.color || "#00f0ff",
+                      letterSpacing: 1.5,
+                      margin: "0 0 8px",
+                    }}
+                  >
+                    BEST FOR
+                  </h3>
+                  <ul
+                    style={{
+                      margin: 0,
+                      padding: 0,
+                      listStyle: "none",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                    }}
+                  >
+                    {attrs.bestFor.map((b, i) => (
+                      <li
+                        key={i}
+                        style={{
+                          fontSize: 12.5,
+                          lineHeight: 1.55,
+                          color: "var(--text-default)",
+                          display: "flex",
+                          gap: 8,
+                        }}
+                      >
+                        <span style={{ color: cat?.color || "#00f0ff", flexShrink: 0 }}>▸</span>
+                        <span>{b}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {attrs.notFor?.length > 0 && (
+                <div>
+                  <h3
+                    style={{
+                      fontFamily: "var(--font-mono)",
+                      fontSize: 11,
+                      color: "var(--text-faint)",
+                      letterSpacing: 1.5,
+                      margin: "0 0 8px",
+                    }}
+                  >
+                    NOT FOR
+                  </h3>
+                  <ul
+                    style={{
+                      margin: 0,
+                      padding: 0,
+                      listStyle: "none",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                    }}
+                  >
+                    {attrs.notFor.map((n, i) => (
+                      <li
+                        key={i}
+                        style={{
+                          fontSize: 12.5,
+                          lineHeight: 1.55,
+                          color: "var(--text-faint)",
+                          display: "flex",
+                          gap: 8,
+                        }}
+                      >
+                        <span style={{ flexShrink: 0 }}>✕</span>
+                        <span>{n}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
         </div>

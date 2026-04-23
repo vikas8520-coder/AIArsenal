@@ -3,6 +3,7 @@ import { useState, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getCategoryById } from "../data/categories";
 import { TOOLS, isNewTool } from "../data/tools";
+import { getAttributes } from "../data/tool-attributes";
 import { findSimilarTools } from "../utils/similarTools";
 
 export function SkeletonCard() {
@@ -57,6 +58,8 @@ export default function ToolCard({
       return t ? { ...t, score: s.score } : null;
     }).filter(Boolean);
   }, [expanded, tool.id]);
+
+  const attrs = getAttributes(tool.id);
 
   // Mouse-glow effect
   const handleMouseMove = useCallback((e) => {
@@ -318,6 +321,42 @@ export default function ToolCard({
                     </span>
                   ))}
                 </div>
+
+                {/* Best for / not for */}
+                {attrs && (attrs.bestFor?.length > 0 || attrs.notFor?.length > 0) && (
+                  <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: attrs.notFor?.length ? "1fr 1fr" : "1fr", gap: 10 }}>
+                    {attrs.bestFor?.length > 0 && (
+                      <div>
+                        <span style={{ color: accent, fontSize: 8.5, fontFamily: "monospace", letterSpacing: 1.5 }}>
+                          BEST FOR
+                        </span>
+                        <ul style={{ margin: "4px 0 0", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 3 }}>
+                          {attrs.bestFor.map((b, i) => (
+                            <li key={i} style={{ fontSize: 11, lineHeight: 1.45, color: "var(--text-default)", display: "flex", gap: 6 }}>
+                              <span style={{ color: accent, flexShrink: 0 }}>▸</span>
+                              <span>{b}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {attrs.notFor?.length > 0 && (
+                      <div>
+                        <span style={{ color: "var(--text-faint)", fontSize: 8.5, fontFamily: "monospace", letterSpacing: 1.5 }}>
+                          NOT FOR
+                        </span>
+                        <ul style={{ margin: "4px 0 0", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 3 }}>
+                          {attrs.notFor.map((n, i) => (
+                            <li key={i} style={{ fontSize: 11, lineHeight: 1.45, color: "var(--text-faint)", display: "flex", gap: 6 }}>
+                              <span style={{ color: "var(--text-faint)", flexShrink: 0 }}>✕</span>
+                              <span>{n}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Similar Tools */}
                 {similarTools.length > 0 && (
