@@ -205,6 +205,29 @@ export default function Header({
           ⌕ ASK AI
         </a>
 
+        {/* Build — custom stack composer */}
+        <a
+          href="/build"
+          title="Compose your own AI stack"
+          className="hide-mobile"
+          style={{
+            ...pillStyle,
+            textDecoration: "none",
+            color: "#a855f7",
+            borderColor: "rgba(168,85,247,0.35)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = "rgba(168,85,247,0.6)";
+            e.currentTarget.style.background = "rgba(168,85,247,0.08)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = "rgba(168,85,247,0.35)";
+            e.currentTarget.style.background = "var(--surface-1)";
+          }}
+        >
+          + BUILD
+        </a>
+
         {/* Stacks */}
         <a
           href="/stacks"
