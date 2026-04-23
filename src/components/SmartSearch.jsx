@@ -93,6 +93,36 @@ function parseNLFilters(query) {
 
 const VS_PATTERN = /^(.+?)\s+(?:vs\.?|versus|or|compared?\s+(?:to|with))\s+(.+?)$/i;
 
+// Levenshtein distance — tolerates typos like "calude" → "claude"
+function editDistance(a, b) {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  const dp = Array.from({ length: a.length + 1 }, () =>
+    new Array(b.length + 1).fill(0)
+  );
+  for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+  for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return dp[a.length][b.length];
+}
+
+// Allow ~1 typo per 4 chars, min 2 for names ≥4 chars, max 3.
+// "calude" → "claude" = 2 edits (transposition), needs threshold ≥ 2.
+function typoThreshold(str) {
+  if (str.length < 4) return 1;
+  return Math.min(3, Math.max(2, Math.floor(str.length / 4)));
+}
+
 function detectComparison(query) {
   const match = query.trim().match(VS_PATTERN);
   if (!match) return null;
@@ -100,15 +130,42 @@ function detectComparison(query) {
   const nameA = match[1].trim().toLowerCase();
   const nameB = match[2].trim().toLowerCase();
 
-  const findTool = (name) =>
-    TOOLS.find(t => t.name.toLowerCase() === name) ||
-    TOOLS.find(t => t.name.toLowerCase().includes(name)) ||
-    TOOLS.find(t => t.tags?.some(tag => tag.toLowerCase() === name));
+  const findTool = (name) => {
+    // 1. Exact match
+    const exact = TOOLS.find((t) => t.name.toLowerCase() === name);
+    if (exact) return exact;
+    // 2. Substring (either direction, for partial names)
+    const sub = TOOLS.find((t) => {
+      const n = t.name.toLowerCase();
+      return n.includes(name) || (name.length > 3 && name.includes(n));
+    });
+    if (sub) return sub;
+    // 3. Tag match
+    const tag = TOOLS.find((t) =>
+      t.tags?.some((tg) => tg.toLowerCase() === name)
+    );
+    if (tag) return tag;
+    // 4. Fuzzy — tolerate typos (Levenshtein ≤ threshold)
+    const threshold = typoThreshold(name);
+    let bestTool = null;
+    let bestDist = Infinity;
+    for (const t of TOOLS) {
+      const n = t.name.toLowerCase();
+      // Only compare against first token of multi-word names for speed
+      const firstToken = n.split(/\s+/)[0];
+      const dist = Math.min(editDistance(name, n), editDistance(name, firstToken));
+      if (dist < bestDist && dist <= threshold) {
+        bestDist = dist;
+        bestTool = t;
+      }
+    }
+    return bestTool;
+  };
 
   const toolA = findTool(nameA);
   const toolB = findTool(nameB);
 
-  if (toolA && toolB) return { toolA, toolB };
+  if (toolA && toolB && toolA.id !== toolB.id) return { toolA, toolB };
   return null;
 }
 
