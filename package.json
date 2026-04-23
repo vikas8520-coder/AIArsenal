@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "194+ curated free AI tools with AI-powered stack recommendations",
+  "description": "206+ curated free AI tools with AI-powered stack recommendations",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

@@ -48,6 +48,21 @@ export default function sitemap() {
     })),
   ];
 
+  const staticUrls = [
+    {
+      url: `${BASE_URL}/ask`,
+      lastModified: new Date().toISOString(),
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
+      url: `${BASE_URL}/get-featured`,
+      lastModified: new Date().toISOString(),
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+  ];
+
   return [
     {
       url: BASE_URL,
@@ -55,6 +70,7 @@ export default function sitemap() {
       changeFrequency: "daily",
       priority: 1.0,
     },
+    ...staticUrls,
     ...blogUrls,
     ...categoryUrls,
     ...toolUrls,

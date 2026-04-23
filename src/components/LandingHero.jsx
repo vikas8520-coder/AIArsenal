@@ -449,7 +449,7 @@ function SearchDemo({ accent }) {
           fontFamily: "var(--font-mono)", fontSize: 13,
           color: demoQuery ? "var(--text-strong)" : "var(--text-faint)",
         }}>
-          {demoQuery || "Search 194+ tools..."}
+          {demoQuery || "Search 206+ tools..."}
           <span style={{
             display: "inline-block", width: 2, height: "1em",
             background: accent, marginLeft: 1, verticalAlign: "middle",

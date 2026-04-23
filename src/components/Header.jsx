@@ -181,6 +181,30 @@ export default function Header({
           </button>
         )}
 
+        {/* Ask — conversational AI */}
+        <a
+          href="/ask"
+          title="Ask AIArsenal — conversational tool advisor"
+          className="hide-mobile"
+          style={{
+            ...pillStyle,
+            textDecoration: "none",
+            color: accent,
+            borderColor: `${accent}35`,
+            background: `${accent}08`,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = `${accent}60`;
+            e.currentTarget.style.background = `${accent}15`;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = `${accent}35`;
+            e.currentTarget.style.background = `${accent}08`;
+          }}
+        >
+          ⌕ ASK AI
+        </a>
+
         {/* Blog */}
         <a
           href="/blog"
@@ -190,6 +214,29 @@ export default function Header({
           onMouseLeave={hoverOff}
         >
           BLOG
+        </a>
+
+        {/* Get Featured */}
+        <a
+          href="/get-featured"
+          title="List your tool on AIArsenal"
+          className="hide-mobile"
+          style={{
+            ...pillStyle,
+            textDecoration: "none",
+            color: "#eab308",
+            borderColor: "rgba(234,179,8,0.35)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = "rgba(234,179,8,0.6)";
+            e.currentTarget.style.background = "rgba(234,179,8,0.08)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = "rgba(234,179,8,0.35)";
+            e.currentTarget.style.background = "var(--surface-1)";
+          }}
+        >
+          ★ FEATURED
         </a>
 
         {/* Budget */}

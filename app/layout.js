@@ -17,9 +17,9 @@ const ibmPlexSans = IBM_Plex_Sans({
 });
 
 export const metadata = {
-  title: "AIArsenal — 194+ Free AI Tools, Credits & Systems",
+  title: "AIArsenal — 206+ Free AI Tools, Credits & Systems",
   description:
-    "The definitive curated library of free AI tools, API credits, compute resources, income paths, and personal AI systems. 194+ vetted resources with AI-powered stack recommendations.",
+    "The definitive curated library of free AI tools, API credits, compute resources, income paths, and personal AI systems. 206+ vetted resources with AI-powered stack recommendations.",
   keywords:
     "AI tools, free AI, machine learning tools, LLM, GPU compute, AI credits, open source AI, AI stack planner",
   authors: [{ name: "AIArsenal" }],
@@ -28,9 +28,9 @@ export const metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "AIArsenal — 194+ Free AI Tools, Credits & Systems",
+    title: "AIArsenal — 206+ Free AI Tools, Credits & Systems",
     description:
-      "194+ free AI tools, $600K+ in credits, 75+ GPU hrs/week, and personal AI system blueprints. AI-powered stack planner included.",
+      "206+ free AI tools, $600K+ in credits, 75+ GPU hrs/week, and personal AI system blueprints. AI-powered stack planner included.",
     type: "website",
     url: "/",
     siteName: "AIArsenal",
@@ -38,9 +38,9 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "AIArsenal — 194+ Free AI Tools",
+    title: "AIArsenal — 206+ Free AI Tools",
     description:
-      "Curated library of 194+ free AI tools with AI-powered stack recommendations.",
+      "Curated library of 206+ free AI tools with AI-powered stack recommendations.",
   },
   robots: {
     index: true,
@@ -84,13 +84,13 @@ export default function RootLayout({ children }) {
               "@type": "WebApplication",
               name: "AIArsenal",
               description:
-                "Curated directory of 194+ free AI tools with AI-powered stack recommendations",
+                "Curated directory of 206+ free AI tools with AI-powered stack recommendations",
               url: "https://ai-arsenal-nu.vercel.app",
               applicationCategory: "DeveloperApplication",
               operatingSystem: "Web",
               offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
               featureList: [
-                "194+ curated AI tools",
+                "206+ curated AI tools",
                 "AI-powered stack planner",
                 "Issue solver",
                 "Open source filter",
