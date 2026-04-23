@@ -313,13 +313,17 @@ function Message({ message }) {
   );
 }
 
-export default function ChatClient() {
+export default function ChatClient({ initialQuery = "" }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [emailCaptureShown, setEmailCaptureShown] = useState(false);
+  const [email, setEmail] = useState("");
+  const [emailStatus, setEmailStatus] = useState("idle");
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+  const didAutoSend = useRef(false);
 
   useEffect(() => {
     try {
@@ -329,6 +333,9 @@ export default function ChatClient() {
         if (Array.isArray(parsed) && parsed.length > 0) {
           setMessages(parsed);
         }
+      }
+      if (localStorage.getItem("aiarsenal-chat-email-shown") === "1") {
+        setEmailCaptureShown(true);
       }
     } catch {}
   }, []);
@@ -408,6 +415,49 @@ export default function ChatClient() {
     },
     [send]
   );
+
+  // Auto-send initial query from ?q= param (once).
+  useEffect(() => {
+    if (didAutoSend.current) return;
+    if (!initialQuery || messages.length > 0) return;
+    didAutoSend.current = true;
+    send(initialQuery);
+  }, [initialQuery, messages.length, send]);
+
+  // Email capture: show after 3 assistant replies, once per user.
+  const assistantReplies = messages.filter((m) => m.role === "assistant").length;
+  const shouldShowEmailCapture =
+    !emailCaptureShown && assistantReplies >= 3 && !loading;
+
+  const submitEmail = async (e) => {
+    e.preventDefault();
+    if (!email.trim() || emailStatus === "loading") return;
+    setEmailStatus("loading");
+    try {
+      await fetch("/api/lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, source: "ask-chat" }),
+      });
+      setEmailStatus("done");
+      setEmailCaptureShown(true);
+      try {
+        localStorage.setItem("aiarsenal-chat-email-shown", "1");
+      } catch {}
+      if (window.plausible) {
+        window.plausible("Newsletter Signup", { props: { source: "ask" } });
+      }
+    } catch {
+      setEmailStatus("error");
+    }
+  };
+
+  const dismissEmailCapture = () => {
+    setEmailCaptureShown(true);
+    try {
+      localStorage.setItem("aiarsenal-chat-email-shown", "1");
+    } catch {}
+  };
 
   const messagesWithHandlers = messages.map((m, i) =>
     m.role === "assistant" && i === messages.length - 1
@@ -626,6 +676,141 @@ export default function ChatClient() {
           >
             {error}
           </div>
+        )}
+
+        {shouldShowEmailCapture && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+              padding: "16px 18px",
+              background: `${ACCENT}06`,
+              border: `1px solid ${ACCENT}25`,
+              borderRadius: 12,
+              marginBottom: 20,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                gap: 12,
+                marginBottom: 12,
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: "var(--text-strong)",
+                    marginBottom: 4,
+                  }}
+                >
+                  Liking the recommendations?
+                </div>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "var(--text-secondary)",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  Get weekly AI tool picks in your inbox — hand-curated, no spam.
+                </div>
+              </div>
+              <button
+                onClick={dismissEmailCapture}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 16,
+                  color: "var(--text-faint)",
+                  padding: 0,
+                  lineHeight: 1,
+                }}
+                aria-label="Dismiss"
+              >
+                ×
+              </button>
+            </div>
+            {emailStatus === "done" ? (
+              <div
+                style={{
+                  fontFamily: "monospace",
+                  fontSize: 12,
+                  color: "#10b981",
+                }}
+              >
+                ✓ Subscribed. Check your inbox on Monday.
+              </div>
+            ) : (
+              <form onSubmit={submitEmail}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 6,
+                    padding: 4,
+                    background: "var(--surface-1)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 8,
+                  }}
+                >
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    disabled={emailStatus === "loading"}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@domain.com"
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      background: "transparent",
+                      border: "none",
+                      outline: "none",
+                      padding: "6px 8px",
+                      color: "var(--text-strong)",
+                      fontFamily: "monospace",
+                      fontSize: 12,
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    disabled={emailStatus === "loading"}
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: 10,
+                      fontWeight: 700,
+                      padding: "6px 12px",
+                      background: `${ACCENT}20`,
+                      border: `1px solid ${ACCENT}50`,
+                      color: ACCENT,
+                      borderRadius: 6,
+                      cursor: emailStatus === "loading" ? "wait" : "pointer",
+                    }}
+                  >
+                    {emailStatus === "loading" ? "..." : "SUBSCRIBE"}
+                  </button>
+                </div>
+                {emailStatus === "error" && (
+                  <div
+                    style={{
+                      marginTop: 6,
+                      fontSize: 10,
+                      fontFamily: "monospace",
+                      color: "#f87171",
+                    }}
+                  >
+                    Something went wrong. Try again.
+                  </div>
+                )}
+              </form>
+            )}
+          </motion.div>
         )}
       </div>
 

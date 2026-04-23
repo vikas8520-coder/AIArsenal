@@ -6,6 +6,9 @@ import { PAID_TOOLS, BUDGET_BLUEPRINTS, COST_STRATEGIES } from "../data/paid-too
 import { searchTools } from "../hooks/useSearch";
 import { useSemanticSearch, isSemanticQuery } from "../hooks/useSemanticSearch";
 import { CATEGORIES, getCategoryById } from "../data/categories";
+import { getAllCompareSlugs, getCompareSlug } from "../lib/compare";
+
+const COMPARE_SLUGS = new Set(getAllCompareSlugs());
 
 // ── Use-Case Cards (#6) ─────────────────────────────────────────────────────
 const USE_CASES = [
@@ -288,6 +291,9 @@ function ComparisonCard({ toolA, toolB, accent }) {
   const catA = getCategoryById(toolA.category);
   const catB = getCategoryById(toolB.category);
 
+  const compareSlug = getCompareSlug(toolA, toolB);
+  const hasComparePage = COMPARE_SLUGS.has(compareSlug);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 6 }}
@@ -371,6 +377,29 @@ function ComparisonCard({ toolA, toolB, accent }) {
           {toolB.desc}
         </div>
       </div>
+
+      {hasComparePage && (
+        <a
+          href={`/compare/${compareSlug}`}
+          style={{
+            display: "block",
+            textAlign: "center",
+            marginTop: 10,
+            padding: "8px 12px",
+            background: "#a855f715",
+            border: "1px solid #a855f740",
+            borderRadius: 8,
+            fontSize: 11,
+            fontFamily: "monospace",
+            color: "#a855f7",
+            textDecoration: "none",
+            fontWeight: 700,
+            letterSpacing: 0.5,
+          }}
+        >
+          View full {toolA.name} vs {toolB.name} page →
+        </a>
+      )}
     </motion.div>
   );
 }

@@ -2,6 +2,7 @@ import { TOOLS } from "@/src/data/tools";
 import { CATEGORIES } from "@/src/data/categories";
 import { BLOG_POSTS } from "@/src/data/blog-posts";
 import { getAllToolSlugs, getToolBySlug, getCategorySlug } from "@/src/lib/tools";
+import { getAllCompareSlugs } from "@/src/lib/compare";
 import { slugify } from "@/src/utils/slugify";
 
 const BASE_URL = "https://ai-arsenal-nu.vercel.app";
@@ -63,6 +64,13 @@ export default function sitemap() {
     },
   ];
 
+  const compareUrls = getAllCompareSlugs().map((slug) => ({
+    url: `${BASE_URL}/compare/${slug}`,
+    lastModified: new Date().toISOString(),
+    changeFrequency: "monthly",
+    priority: 0.75,
+  }));
+
   return [
     {
       url: BASE_URL,
@@ -75,5 +83,6 @@ export default function sitemap() {
     ...categoryUrls,
     ...toolUrls,
     ...alternativesUrls,
+    ...compareUrls,
   ];
 }

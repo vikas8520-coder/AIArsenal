@@ -1,5 +1,6 @@
 import { JetBrains_Mono, IBM_Plex_Sans } from "next/font/google";
 import Script from "next/script";
+import Footer from "../src/components/Footer";
 import "./globals.css";
 
 const jetbrainsMono = JetBrains_Mono({
@@ -107,7 +108,10 @@ export default function RootLayout({ children }) {
           }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Footer />
+      </body>
       {/* Plausible Analytics */}
       <Script
         defer
