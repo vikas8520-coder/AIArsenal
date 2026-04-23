@@ -205,6 +205,17 @@ export default function Header({
           ⌕ ASK AI
         </a>
 
+        {/* Stacks */}
+        <a
+          href="/stacks"
+          className="hide-mobile"
+          style={{ ...pillStyle, textDecoration: "none" }}
+          onMouseEnter={hoverOn}
+          onMouseLeave={hoverOff}
+        >
+          STACKS
+        </a>
+
         {/* Blog */}
         <a
           href="/blog"

@@ -5,6 +5,7 @@ import {
   BUDGET_BLUEPRINTS,
   COST_STRATEGIES,
 } from "../../../src/data/paid-tools";
+import { STACKS } from "../../../src/data/stacks";
 
 const GEMINI_KEY = process.env.GOOGLE_AI_API_KEY;
 
@@ -32,6 +33,13 @@ function buildPaidContext() {
   ).join("\n");
 }
 
+function buildStacks() {
+  return STACKS.map(
+    (s) =>
+      `- /stacks/${s.slug} — "${s.title}": ${s.hook} [${s.difficulty}, ${s.budget}, ${s.roles.length} tools]`
+  ).join("\n");
+}
+
 function buildSystemPrompt() {
   return `You are the AIArsenal assistant — an expert curator of ${TOOLS.length}+ AI tools.
 You help users find the right tools, plan AI stacks, compare options, and understand pricing tradeoffs.
@@ -40,7 +48,7 @@ TONE: Direct, helpful, opinionated. Use plain English. No filler. Keep replies t
 
 RESPONSE FORMAT — return ONLY valid JSON (no markdown, no backticks):
 {
-  "answer": "2-5 sentence direct answer to the user",
+  "answer": "2-5 sentence direct answer to the user. If a stack recipe fits their question, mention it by URL like /stacks/ai-saas-weekend inline in the answer.",
   "tool_ids": ["d3", "e1"],
   "followups": ["Suggested follow-up 1", "Suggested follow-up 2", "Suggested follow-up 3"]
 }
@@ -51,9 +59,13 @@ RULES:
 - If you don't know, say so honestly — don't invent tools
 - If the user is vague ("what's good for AI"), ask a clarifying question in "answer" and leave tool_ids empty
 - If they ask about a tool not in the catalog, mention it honestly and recommend the closest match that IS in the catalog
+- If a user's question matches the GOAL of a curated stack below, recommend that stack URL in the answer and still list individual tool_ids for the stack's tools
 
 CATALOG:
 ${buildCatalog()}
+
+CURATED STACK RECIPES (mention the URL when a stack's goal matches the question):
+${buildStacks()}
 
 PAID ALTERNATIVES (for context when users ask about paid options):
 ${buildPaidContext()}
