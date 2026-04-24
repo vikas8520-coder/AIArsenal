@@ -10,7 +10,7 @@ import { getArchetypeBySlug } from "../data/quiz-archetypes";
 import { encodeQuizResult } from "../utils/quizResult";
 import { encodeCustomStack } from "../utils/customStack";
 import StackConstellation from "./StackConstellation";
-import SignatureBackground from "./SignatureBackground";
+import ArchetypeAura from "./ArchetypeAura";
 import { setQuizResult as persistQuizResult } from "../lib/visitorIntel";
 
 const ACCENT = "#00f0ff";
@@ -149,7 +149,7 @@ export default function QuizResultClient({ result }) {
 
   return (
     <div style={{ position: "relative", minHeight: "100vh" }}>
-      <SignatureBackground answers={result.answers} archetype={archetype} />
+      <ArchetypeAura answers={result.answers} archetype={archetype} />
 
       <div
         style={{
