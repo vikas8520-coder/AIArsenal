@@ -11,6 +11,9 @@ import { encodeQuizResult } from "../utils/quizResult";
 import { encodeCustomStack } from "../utils/customStack";
 import StackConstellation from "./StackConstellation";
 import ArchetypeAura from "./ArchetypeAura";
+import HolographicCard from "./HolographicCard";
+import KineticArchetypeTitle from "./KineticArchetypeTitle";
+import GenerativeSigil from "./GenerativeSigil";
 import { setQuizResult as persistQuizResult } from "../lib/visitorIntel";
 
 const ACCENT = "#00f0ff";
@@ -147,6 +150,19 @@ export default function QuizResultClient({ result }) {
   const builderUrl = `/build?s=${stackEncoded}`;
   const scaffoldUrl = `/scaffold?s=${stackEncoded}`;
 
+  // Deterministic seed for the generative sigil — same answers always
+  // produce the same mark. Bakes archetype + every answer into the hash.
+  const sigilSeed = useMemo(() => {
+    const parts = [archetype.slug];
+    if (result.answers) {
+      for (const k of Object.keys(result.answers).sort()) {
+        parts.push(`${k}:${result.answers[k]}`);
+      }
+    }
+    parts.push(...result.tools.map((t) => t.id).sort());
+    return parts.join("|");
+  }, [archetype.slug, result.answers, result.tools]);
+
   return (
     <div style={{ position: "relative", minHeight: "100vh" }}>
       <ArchetypeAura answers={result.answers} archetype={archetype} />
@@ -188,74 +204,192 @@ export default function QuizResultClient({ result }) {
           <span style={{ color: "var(--text-secondary)" }}>Result</span>
         </div>
 
-        {/* Archetype header */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          style={{ textAlign: "center", marginBottom: 40 }}
-        >
-          <div
-            style={{
-              fontSize: 10,
-              fontFamily: "monospace",
-              letterSpacing: 2.5,
-              color: accent,
-              marginBottom: 12,
-            }}
-          >
-            YOU ARE
-          </div>
-          <h1
-            style={{
-              margin: 0,
-              fontFamily: "monospace",
-              fontSize: "clamp(32px, 6vw, 58px)",
-              fontWeight: 700,
-              color: "var(--text-strong)",
-              letterSpacing: -1.5,
-              lineHeight: 1.05,
-            }}
-          >
-            {archetype.name}
-          </h1>
-          <p
-            style={{
-              margin: "12px auto 0",
-              fontFamily: "monospace",
-              fontSize: 14,
-              color: accent,
-              letterSpacing: 0.5,
-            }}
-          >
-            "{archetype.tagline}"
-          </p>
-          <p
-            style={{
-              margin: "18px auto 0",
-              maxWidth: 580,
-              fontSize: 14,
-              lineHeight: 1.6,
-              color: "var(--text-secondary)",
-            }}
-          >
-            {archetype.identity}
-          </p>
-        </motion.div>
+        {/* Holographic identity card — archetype + constellation wrapped as
+            a collectible tilting card with cursor-following foil */}
+        <div style={{ marginBottom: 48, perspective: 1200 }}>
+          <HolographicCard accent={accent}>
+            {/* Top row: "YOU ARE" label + 1-of-10 rarity tag */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 20,
+                gap: 12,
+                flexWrap: "wrap",
+              }}
+            >
+              <motion.div
+                initial={{ opacity: 0, x: -6 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4 }}
+                style={{
+                  fontSize: 10,
+                  fontFamily: "monospace",
+                  letterSpacing: 2.5,
+                  color: accent,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
+                <span
+                  style={{
+                    display: "inline-block",
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: accent,
+                    boxShadow: `0 0 10px ${accent}`,
+                  }}
+                />
+                YOU ARE
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, x: 6 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+                style={{
+                  fontSize: 10,
+                  fontFamily: "monospace",
+                  letterSpacing: 2,
+                  color: "var(--text-faint)",
+                  padding: "4px 10px",
+                  border: "1px solid var(--border)",
+                  borderRadius: 4,
+                }}
+              >
+                1 OF 10 · ARCHETYPE
+              </motion.div>
+            </div>
 
-        {/* Constellation */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          style={{ marginBottom: 60 }}
-        >
-          <StackConstellation
-            archetype={archetype}
-            tools={result.tools}
-            reveal={true}
-          />
-        </motion.div>
+            {/* Kinetic title */}
+            <div style={{ marginBottom: 14 }}>
+              <KineticArchetypeTitle name={archetype.name} accent={accent} />
+            </div>
+
+            {/* Tagline + identity */}
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 1.5 }}
+              style={{
+                margin: "0 auto 12px",
+                maxWidth: 520,
+                fontFamily: "monospace",
+                fontSize: 13,
+                color: accent,
+                letterSpacing: 0.5,
+                textAlign: "center",
+              }}
+            >
+              "{archetype.tagline}"
+            </motion.p>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 1.7 }}
+              style={{
+                margin: "0 auto 36px",
+                maxWidth: 580,
+                fontSize: 13.5,
+                lineHeight: 1.65,
+                color: "var(--text-secondary)",
+                textAlign: "center",
+              }}
+            >
+              {archetype.identity}
+            </motion.p>
+
+            {/* Constellation inside the card */}
+            <div
+              style={{
+                position: "relative",
+                marginBottom: 10,
+              }}
+            >
+              <StackConstellation
+                archetype={archetype}
+                tools={result.tools}
+                reveal={true}
+              />
+            </div>
+
+            {/* Bottom row: sigil on the left, serial number on the right */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 2.5 }}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-end",
+                marginTop: 40,
+                paddingTop: 24,
+                borderTop: `1px dashed ${accent}25`,
+                gap: 20,
+                flexWrap: "wrap",
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontSize: 9,
+                    fontFamily: "monospace",
+                    letterSpacing: 2,
+                    color: "var(--text-faint)",
+                    marginBottom: 10,
+                  }}
+                >
+                  SIGIL · UNIQUE TO YOUR ANSWERS
+                </div>
+                <GenerativeSigil
+                  seed={sigilSeed}
+                  color={accent}
+                  size={96}
+                />
+              </div>
+              <div
+                style={{
+                  textAlign: "right",
+                  fontFamily: "monospace",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 9,
+                    letterSpacing: 2,
+                    color: "var(--text-faint)",
+                    marginBottom: 4,
+                  }}
+                >
+                  STACK SIZE
+                </div>
+                <div
+                  style={{
+                    fontSize: 32,
+                    fontWeight: 700,
+                    color: "var(--text-strong)",
+                    letterSpacing: -1,
+                    lineHeight: 1,
+                  }}
+                >
+                  {String(result.tools.length).padStart(2, "0")}
+                </div>
+                <div
+                  style={{
+                    fontSize: 9,
+                    letterSpacing: 2,
+                    color: "var(--text-faint)",
+                    marginTop: 4,
+                  }}
+                >
+                  TOOLS · AIARSENAL
+                </div>
+              </div>
+            </motion.div>
+          </HolographicCard>
+        </div>
 
         {/* Linear list of tools */}
         <motion.div
