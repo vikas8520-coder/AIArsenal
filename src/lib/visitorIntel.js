@@ -22,8 +22,12 @@ const DEFAULT_PROFILE = {
   viewedCategories: {},
   // Last 20 search queries
   recentSearches: [],
-  // { archetypeSlug, takenAt, answers, tools }
+  // { archetypeSlug, takenAt, answers, tools } — most recent
   quizResult: null,
+  // Library of saved quiz results, capped at 12. Newest first.
+  // Each: { id, archetypeSlug, archetypeName, archetypeAccent, savedAt,
+  //         answers, tools: [{id, role, why}], encoded, label }
+  savedQuizResults: [],
   // Custom stacks from /build
   savedStacks: [],
   // Pages visited { [path]: count }
@@ -227,6 +231,60 @@ export function setQuizResult(result) {
     toolIds: (result.tools || []).map((t) => t.id),
   };
   writeProfile(p);
+}
+
+// ── Saved quiz library ──────────────────────────────────────────────────────
+// Persist a result to the user's local library so they can rewatch later.
+// Idempotent: if a result with the same encoded payload already exists, it
+// just bumps the savedAt timestamp.
+export function saveQuizResultToLibrary({
+  archetype,
+  answers,
+  tools,
+  encoded,
+  label,
+}) {
+  if (!archetype || !encoded) return null;
+  const p = readProfile();
+  const id = encoded.slice(0, 12); // short id for keying
+  const now = new Date().toISOString();
+
+  const entry = {
+    id,
+    archetypeSlug: archetype.slug,
+    archetypeName: archetype.name,
+    archetypeAccent: archetype.accent,
+    archetypeTagline: archetype.tagline,
+    savedAt: now,
+    answers: answers || {},
+    tools: (tools || []).map((t) => ({
+      id: t.id,
+      role: t.role || "",
+      why: t.why || "",
+    })),
+    encoded,
+    label: label || archetype.name,
+  };
+
+  // Remove existing entry with same id, then prepend
+  const filtered = (p.savedQuizResults || []).filter((r) => r.id !== id);
+  p.savedQuizResults = [entry, ...filtered].slice(0, 12);
+  writeProfile(p);
+  return entry;
+}
+
+export function removeSavedQuizResult(id) {
+  if (!id) return;
+  const p = readProfile();
+  p.savedQuizResults = (p.savedQuizResults || []).filter((r) => r.id !== id);
+  writeProfile(p);
+}
+
+export function isQuizResultSaved(encoded) {
+  if (!encoded) return false;
+  const id = encoded.slice(0, 12);
+  const p = readProfile();
+  return (p.savedQuizResults || []).some((r) => r.id === id);
 }
 
 export function clearProfile() {

@@ -15,7 +15,11 @@ import HolographicCard from "./HolographicCard";
 import KineticArchetypeTitle from "./KineticArchetypeTitle";
 import GenerativeSigil from "./GenerativeSigil";
 import QuizStoryMode from "./QuizStoryMode";
-import { setQuizResult as persistQuizResult } from "../lib/visitorIntel";
+import {
+  setQuizResult as persistQuizResult,
+  saveQuizResultToLibrary,
+  isQuizResultSaved,
+} from "../lib/visitorIntel";
 
 const ACCENT = "#00f0ff";
 
@@ -23,6 +27,7 @@ export default function QuizResultClient({ result }) {
   const [copied, setCopied] = useState(false);
   // Story mode shows once per result-URL; exit sticks for the session
   const [storyOpen, setStoryOpen] = useState(true);
+  const [saved, setSaved] = useState(false);
 
   const archetype = useMemo(
     () => getArchetypeBySlug(result?.archetypeSlug) || null,
@@ -50,6 +55,17 @@ export default function QuizResultClient({ result }) {
         );
       }
     } catch {}
+  }, [result?.archetypeSlug]);
+
+  const replayStory = useCallback(() => {
+    try {
+      if (result?.archetypeSlug) {
+        sessionStorage.removeItem(
+          `aiarsenal-story-seen-${result.archetypeSlug}`
+        );
+      }
+    } catch {}
+    setStoryOpen(true);
   }, [result?.archetypeSlug]);
 
   // Fire confetti on mount (once) — only when story is closed
@@ -156,6 +172,37 @@ export default function QuizResultClient({ result }) {
         });
       }
     });
+  };
+
+  // Encoded payload for the save-library entry — same shape as the share URL
+  const quizEncoded = useMemo(() => {
+    return encodeQuizResult({
+      archetype: { slug: archetype.slug },
+      answers: result.answers,
+      tools: result.tools,
+    });
+  }, [archetype.slug, result.answers, result.tools]);
+
+  // Reflect saved-state on mount + after archetype changes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setSaved(isQuizResultSaved(quizEncoded));
+  }, [quizEncoded]);
+
+  const handleSave = () => {
+    saveQuizResultToLibrary({
+      archetype,
+      answers: result.answers,
+      tools: result.tools,
+      encoded: quizEncoded,
+      label: archetype.name,
+    });
+    setSaved(true);
+    if (typeof window !== "undefined" && window.plausible) {
+      window.plausible("Quiz Result Saved", {
+        props: { archetype: archetype.slug },
+      });
+    }
   };
 
   // Build a /build and /scaffold URL with the quiz tools pre-loaded
@@ -658,6 +705,58 @@ export default function QuizResultClient({ result }) {
             >
               {copied ? "✓ LINK COPIED" : "↗ SHARE RESULT"}
             </button>
+            <button
+              onClick={handleSave}
+              disabled={saved}
+              style={{
+                padding: "12px 22px",
+                background: saved ? "#eab30818" : "var(--surface-1)",
+                color: saved ? "#eab308" : "var(--text-strong)",
+                border: `1px solid ${saved ? "#eab30850" : "var(--border-bright)"}`,
+                fontFamily: "monospace",
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: 1,
+                borderRadius: 10,
+                cursor: saved ? "default" : "pointer",
+              }}
+            >
+              {saved ? "★ SAVED" : "☆ SAVE FOR LATER"}
+            </button>
+            <button
+              onClick={replayStory}
+              style={{
+                padding: "12px 22px",
+                background: "transparent",
+                color: accent,
+                border: `1px solid ${accent}50`,
+                fontFamily: "monospace",
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: 1,
+                borderRadius: 10,
+                cursor: "pointer",
+              }}
+            >
+              ▶ REPLAY STORY
+            </button>
+            <Link
+              href="/quiz/library"
+              style={{
+                padding: "12px 22px",
+                background: "transparent",
+                color: "var(--text-faint)",
+                border: "1px solid var(--border)",
+                fontFamily: "monospace",
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: 1,
+                borderRadius: 10,
+                textDecoration: "none",
+              }}
+            >
+              YOUR LIBRARY
+            </Link>
             <Link
               href="/quiz"
               style={{
