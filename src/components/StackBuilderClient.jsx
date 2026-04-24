@@ -7,6 +7,7 @@ import { TOOLS } from "../data/tools";
 import { CATEGORIES, getCategoryById } from "../data/categories";
 import { getToolSlug } from "../lib/tools";
 import { encodeCustomStack, decodeCustomStack } from "../utils/customStack";
+import StackGapDetector from "./StackGapDetector";
 
 const ACCENT = "#00f0ff";
 
@@ -669,6 +670,22 @@ export default function StackBuilderClient({ readOnly = false, initialEncoded = 
               marginBottom: 12,
             }}
           />
+
+          {/* Smart gap detector — surfaces missing roles for common stack shapes */}
+          {stack.roles.length >= 2 && (
+            <StackGapDetector
+              stack={stack}
+              onPickTool={(tool, roleLabel) => {
+                setStack((s) => ({
+                  ...s,
+                  roles: [
+                    ...s.roles,
+                    { label: roleLabel || "", toolId: tool.id },
+                  ],
+                }));
+              }}
+            />
+          )}
 
           {stack.roles.length === 0 ? (
             <div

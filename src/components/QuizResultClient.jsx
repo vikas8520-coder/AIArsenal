@@ -11,6 +11,7 @@ import { encodeQuizResult } from "../utils/quizResult";
 import { encodeCustomStack } from "../utils/customStack";
 import StackConstellation from "./StackConstellation";
 import SignatureBackground from "./SignatureBackground";
+import { setQuizResult as persistQuizResult } from "../lib/visitorIntel";
 
 const ACCENT = "#00f0ff";
 
@@ -48,6 +49,17 @@ export default function QuizResultClient({ result }) {
       });
     }
   }, [archetype]);
+
+  // Persist the result into the visitor profile so future pages
+  // know which archetype the user is.
+  useEffect(() => {
+    if (!archetype || !result) return;
+    persistQuizResult({
+      archetype,
+      answers: result.answers,
+      tools: result.tools,
+    });
+  }, [archetype, result]);
 
   if (!result || !archetype) {
     return (

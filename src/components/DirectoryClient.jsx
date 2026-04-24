@@ -23,6 +23,7 @@ import ComparisonMatrix from "@/src/components/ComparisonMatrix";
 import SharePanel from "@/src/components/SharePanel";
 import CostCalculator from "@/src/components/CostCalculator";
 import LandingHero from "@/src/components/LandingHero";
+import WelcomeBackBanner from "@/src/components/WelcomeBackBanner";
 
 // Group tools by subcategory, sponsored tools float to top
 function groupBySubcategory(tools) {
@@ -288,6 +289,9 @@ export default function DirectoryClient() {
         >
           {/* Category Hero */}
           <CategoryHero cat={activeCatObj} filteredCount={filtered.length} />
+
+          {/* Personalized welcome-back banner (All Tools only) */}
+          {showSpotlight && <WelcomeBackBanner />}
 
           {/* Spotlight (All Tools only) */}
           {showSpotlight && <Spotlight onToolSelect={() => {}} />}

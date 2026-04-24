@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { findSimilarTools } from "@/src/utils/similarTools";
@@ -8,6 +8,8 @@ import { TOOLS } from "@/src/data/tools";
 import { getCategoryById } from "@/src/data/categories";
 import { getAttributes } from "@/src/data/tool-attributes";
 import { getToolSlug } from "@/src/lib/tools";
+import { getTypicalPairs } from "@/src/lib/typicalPairs";
+import { trackToolView } from "@/src/lib/visitorIntel";
 
 export default function ToolPageClient({ tool }) {
   const [bookmarked, setBookmarked] = useState(() => {
@@ -43,6 +45,16 @@ export default function ToolPageClient({ tool }) {
   const cat = getCategoryById(tool.category);
   const toolUrl = tool.url?.startsWith("http") ? tool.url : `https://${tool.url}`;
   const attrs = getAttributes(tool.id);
+  const typicalPairs = useMemo(() => {
+    return getTypicalPairs(tool.id, 4)
+      .map((p) => TOOLS.find((t) => t.id === p.toolId))
+      .filter(Boolean);
+  }, [tool.id]);
+
+  // Track this tool page view into visitor profile
+  useEffect(() => {
+    trackToolView(tool.id);
+  }, [tool.id]);
 
   return (
     <div
@@ -324,6 +336,98 @@ export default function ToolPageClient({ tool }) {
             </div>
           )}
         </div>
+
+        {/* Typically paired with — smart co-occurrence from curated stacks */}
+        {typicalPairs.length > 0 && (
+          <div style={{ marginBottom: 32 }}>
+            <h2
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: 11,
+                color: cat?.color || "#00f0ff",
+                letterSpacing: 1.5,
+                marginBottom: 4,
+              }}
+            >
+              ◈ TYPICALLY PAIRED WITH
+            </h2>
+            <p
+              style={{
+                fontSize: 12,
+                color: "var(--text-faint)",
+                margin: "0 0 12px",
+                lineHeight: 1.5,
+              }}
+            >
+              Tools that appear alongside {tool.name} in AIArsenal's curated
+              stacks.
+            </p>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              {typicalPairs.map((t) => {
+                const tCat = getCategoryById(t.category);
+                const tColor = tCat?.color || "#00f0ff";
+                return (
+                  <Link
+                    key={t.id}
+                    href={`/tools/${getToolSlug(t)}`}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "12px 16px",
+                      background: "var(--surface-1)",
+                      border: "1px solid var(--border)",
+                      borderLeft: `3px solid ${tColor}`,
+                      borderRadius: 10,
+                      textDecoration: "none",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div
+                        style={{
+                          fontFamily: "var(--font-mono)",
+                          fontSize: 13,
+                          fontWeight: 700,
+                          color: "var(--text-strong)",
+                        }}
+                      >
+                        {t.name}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 11.5,
+                          color: "var(--text-secondary)",
+                          marginTop: 2,
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        {t.desc}
+                      </div>
+                    </div>
+                    <span
+                      style={{
+                        fontSize: 9,
+                        fontFamily: "var(--font-mono)",
+                        color: tColor,
+                        letterSpacing: 1,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {tCat?.label || t.category}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Similar Tools */}
         {similar.length > 0 && (

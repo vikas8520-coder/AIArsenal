@@ -1,10 +1,11 @@
 "use client";
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getCategoryById } from "../data/categories";
 import { TOOLS, isNewTool } from "../data/tools";
 import { getAttributes } from "../data/tool-attributes";
 import { findSimilarTools } from "../utils/similarTools";
+import { readProfile, trackToolView } from "../lib/visitorIntel";
 
 export function SkeletonCard() {
   return (
@@ -60,6 +61,21 @@ export default function ToolCard({
   }, [expanded, tool.id]);
 
   const attrs = getAttributes(tool.id);
+
+  const [seenBefore, setSeenBefore] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const p = readProfile();
+    if (p.viewedTools?.[tool.id]?.count > 0) setSeenBefore(true);
+  }, [tool.id]);
+
+  // Track expansion as a "view"
+  useEffect(() => {
+    if (expanded) {
+      trackToolView(tool.id);
+      setSeenBefore(true);
+    }
+  }, [expanded, tool.id]);
 
   // Mouse-glow effect
   const handleMouseMove = useCallback((e) => {
@@ -177,6 +193,21 @@ export default function ToolCard({
                   display: "inline-block",
                 }}>
                   {tool.sponsorLabel || "Sponsored"}
+                </span>
+              )}
+              {seenBefore && !expanded && (
+                <span
+                  title="You've viewed this tool before"
+                  style={{
+                    fontSize: 8,
+                    padding: "1.5px 5px",
+                    color: "var(--text-faint)",
+                    fontFamily: "monospace",
+                    fontWeight: 600,
+                    opacity: 0.7,
+                  }}
+                >
+                  ◉ SEEN
                 </span>
               )}
               {tool.oss && (
