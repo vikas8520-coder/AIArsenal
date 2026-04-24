@@ -13,10 +13,11 @@ export function generateStaticParams() {
   return getAllStackSlugs().map((slug) => ({ slug }));
 }
 
-export function generateMetadata({ params }) {
-  const stack = getStackBySlug(params.slug);
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  const stack = getStackBySlug(slug);
   if (!stack) return { title: "Stack not found — AIArsenal" };
-  const url = `${BASE_URL}/stacks/${params.slug}`;
+  const url = `${BASE_URL}/stacks/${slug}`;
   return {
     title: `${stack.title} — AI Stack Recipe | AIArsenal`,
     description: `${stack.hook} ${stack.roles.length} tools · ${stack.budget} · ${stack.difficulty}.`,
@@ -35,8 +36,9 @@ export function generateMetadata({ params }) {
   };
 }
 
-export default function StackPage({ params }) {
-  const stack = getStackBySlug(params.slug);
+export default async function StackPage({ params }) {
+  const { slug } = await params;
+  const stack = getStackBySlug(slug);
   if (!stack) notFound();
 
   const related = (stack.relatedSlugs || [])
@@ -82,7 +84,7 @@ export default function StackPage({ params }) {
         "@type": "ListItem",
         position: 3,
         name: stack.title,
-        item: `${BASE_URL}/stacks/${params.slug}`,
+        item: `${BASE_URL}/stacks/${slug}`,
       },
     ],
   };

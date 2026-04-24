@@ -14,7 +14,8 @@ export const metadata = {
   },
 };
 
-export default function AskPage({ searchParams }) {
-  const q = typeof searchParams?.q === "string" ? searchParams.q : "";
+export default async function AskPage({ searchParams }) {
+  const sp = await searchParams;
+  const q = typeof sp?.q === "string" ? sp.q : "";
   return <ChatClient initialQuery={q} />;
 }

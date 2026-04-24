@@ -12,14 +12,15 @@ export function generateStaticParams() {
   return getAllCompareSlugs().map((slug) => ({ slug }));
 }
 
-export function generateMetadata({ params }) {
-  const pair = getComparisonBySlug(params.slug);
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  const pair = getComparisonBySlug(slug);
   if (!pair) {
     return { title: "Comparison not found — AIArsenal" };
   }
   const title = `${pair.toolA.name} vs ${pair.toolB.name} — 2026 Comparison | AIArsenal`;
   const description = `${pair.toolA.name} vs ${pair.toolB.name}: free tiers, privacy, features side-by-side. ${pair.toolA.desc} vs ${pair.toolB.desc}. Updated for 2026.`;
-  const url = `${BASE_URL}/compare/${params.slug}`;
+  const url = `${BASE_URL}/compare/${slug}`;
   return {
     title,
     description,
@@ -38,11 +39,12 @@ export function generateMetadata({ params }) {
   };
 }
 
-export default function ComparePage({ params }) {
-  const pair = getComparisonBySlug(params.slug);
+export default async function ComparePage({ params }) {
+  const { slug } = await params;
+  const pair = getComparisonBySlug(slug);
   if (!pair) notFound();
 
-  const related = getRelatedComparisons(params.slug, 6);
+  const related = getRelatedComparisons(slug, 6);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -60,7 +62,7 @@ export default function ComparePage({ params }) {
     },
     datePublished: "2026-04-22",
     dateModified: new Date().toISOString().slice(0, 10),
-    mainEntityOfPage: `${BASE_URL}/compare/${params.slug}`,
+    mainEntityOfPage: `${BASE_URL}/compare/${slug}`,
   };
 
   const breadcrumb = {
@@ -78,7 +80,7 @@ export default function ComparePage({ params }) {
         "@type": "ListItem",
         position: 3,
         name: `${pair.toolA.name} vs ${pair.toolB.name}`,
-        item: `${BASE_URL}/compare/${params.slug}`,
+        item: `${BASE_URL}/compare/${slug}`,
       },
     ],
   };

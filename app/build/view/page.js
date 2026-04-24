@@ -2,8 +2,9 @@ import { Suspense } from "react";
 import StackBuilderClient from "../../../src/components/StackBuilderClient";
 import { decodeCustomStack } from "../../../src/utils/customStack";
 
-export function generateMetadata({ searchParams }) {
-  const encoded = typeof searchParams?.s === "string" ? searchParams.s : "";
+export async function generateMetadata({ searchParams }) {
+  const sp = await searchParams;
+  const encoded = typeof sp?.s === "string" ? sp.s : "";
   const decoded = decodeCustomStack(encoded);
   if (!decoded || !decoded.name) {
     return {
@@ -25,8 +26,9 @@ export function generateMetadata({ searchParams }) {
   };
 }
 
-export default function BuildViewPage({ searchParams }) {
-  const encoded = typeof searchParams?.s === "string" ? searchParams.s : "";
+export default async function BuildViewPage({ searchParams }) {
+  const sp = await searchParams;
+  const encoded = typeof sp?.s === "string" ? sp.s : "";
   return (
     <Suspense fallback={null}>
       <StackBuilderClient readOnly initialEncoded={encoded} />

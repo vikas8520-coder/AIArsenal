@@ -5,8 +5,9 @@ import { getArchetypeBySlug } from "../../../src/data/quiz-archetypes";
 
 const BASE_URL = "https://ai-arsenal-nu.vercel.app";
 
-export function generateMetadata({ searchParams }) {
-  const encoded = typeof searchParams?.s === "string" ? searchParams.s : "";
+export async function generateMetadata({ searchParams }) {
+  const sp = await searchParams;
+  const encoded = typeof sp?.s === "string" ? sp.s : "";
   const decoded = decodeQuizResult(encoded);
   const archetype = decoded ? getArchetypeBySlug(decoded.archetypeSlug) : null;
 
@@ -36,8 +37,9 @@ export function generateMetadata({ searchParams }) {
   };
 }
 
-export default function QuizResultPage({ searchParams }) {
-  const encoded = typeof searchParams?.s === "string" ? searchParams.s : "";
+export default async function QuizResultPage({ searchParams }) {
+  const sp = await searchParams;
+  const encoded = typeof sp?.s === "string" ? sp.s : "";
   const decoded = decodeQuizResult(encoded);
 
   return (
