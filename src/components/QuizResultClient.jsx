@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import confetti from "canvas-confetti";
@@ -14,12 +14,15 @@ import ArchetypeAura from "./ArchetypeAura";
 import HolographicCard from "./HolographicCard";
 import KineticArchetypeTitle from "./KineticArchetypeTitle";
 import GenerativeSigil from "./GenerativeSigil";
+import QuizStoryMode from "./QuizStoryMode";
 import { setQuizResult as persistQuizResult } from "../lib/visitorIntel";
 
 const ACCENT = "#00f0ff";
 
 export default function QuizResultClient({ result }) {
   const [copied, setCopied] = useState(false);
+  // Story mode shows once per result-URL; exit sticks for the session
+  const [storyOpen, setStoryOpen] = useState(true);
 
   const archetype = useMemo(
     () => getArchetypeBySlug(result?.archetypeSlug) || null,
@@ -28,9 +31,30 @@ export default function QuizResultClient({ result }) {
 
   const accent = archetype?.accent || ACCENT;
 
-  // Fire confetti on mount (once)
+  // Skip story mode if this URL's result was already seen in this session
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !result?.archetypeSlug) return;
+    try {
+      const key = `aiarsenal-story-seen-${result.archetypeSlug}`;
+      if (sessionStorage.getItem(key) === "1") setStoryOpen(false);
+    } catch {}
+  }, [result?.archetypeSlug]);
+
+  const exitStory = useCallback(() => {
+    setStoryOpen(false);
+    try {
+      if (result?.archetypeSlug) {
+        sessionStorage.setItem(
+          `aiarsenal-story-seen-${result.archetypeSlug}`,
+          "1"
+        );
+      }
+    } catch {}
+  }, [result?.archetypeSlug]);
+
+  // Fire confetti on mount (once) — only when story is closed
+  useEffect(() => {
+    if (typeof window === "undefined" || storyOpen) return;
     const t = setTimeout(() => {
       try {
         confetti({
@@ -42,7 +66,7 @@ export default function QuizResultClient({ result }) {
       } catch {}
     }, 400);
     return () => clearTimeout(t);
-  }, [accent]);
+  }, [accent, storyOpen]);
 
   // Plausible
   useEffect(() => {
@@ -165,6 +189,19 @@ export default function QuizResultClient({ result }) {
 
   return (
     <div style={{ position: "relative", minHeight: "100vh" }}>
+      {storyOpen && (
+        <QuizStoryMode
+          archetype={archetype}
+          result={result}
+          sigilSeed={sigilSeed}
+          builderUrl={builderUrl}
+          scaffoldUrl={scaffoldUrl}
+          shareUrl={shareUrl}
+          onCopyShare={copyShare}
+          copied={copied}
+          onExit={exitStory}
+        />
+      )}
       <ArchetypeAura answers={result.answers} archetype={archetype} />
 
       <div
