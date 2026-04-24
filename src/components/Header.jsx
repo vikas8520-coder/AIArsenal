@@ -205,6 +205,29 @@ export default function Header({
           ⌕ ASK AI
         </a>
 
+        {/* Quiz — find your stack */}
+        <a
+          href="/quiz"
+          title="Find your AI stack in 60 seconds"
+          className="hide-mobile"
+          style={{
+            ...pillStyle,
+            textDecoration: "none",
+            color: "#ff6b9d",
+            borderColor: "rgba(255,107,157,0.35)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = "rgba(255,107,157,0.6)";
+            e.currentTarget.style.background = "rgba(255,107,157,0.08)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = "rgba(255,107,157,0.35)";
+            e.currentTarget.style.background = "var(--surface-1)";
+          }}
+        >
+          ✨ QUIZ
+        </a>
+
         {/* Build — custom stack composer */}
         <a
           href="/build"
