@@ -280,10 +280,14 @@ export const TOOLS = [
   { id: "c17", name: "HeyGen", url: "heygen.com", category: "Creative AI", subcategory: "Video Generation", desc: "AI avatar video — photorealistic talking heads from text", detail: "HeyGen generates photorealistic AI avatar videos from a script, with 100+ preset avatars or the option to clone your own. Supports 40+ languages with realistic lip-sync. Best for marketers, educators, and creators who need talking-head video content at scale.", quickStart: "Sign up at heygen.com → Pick an avatar and paste your script → Generate a video clip and export it", free: "1 free credit/month (~1 min video)", company: "HeyGen", oss: false, privacy: "Avatar consent required; SOC 2", tags: ["video","avatar","marketing"] },
 
   { id: "c18", name: "Udio", url: "udio.com", category: "Creative AI", subcategory: "Music Generation", desc: "AI music generation — 1,200 free songs/month, vocals + instrumentals", detail: "Udio generates complete songs with vocals, lyrics, and instrumentation from text prompts. The free tier is exceptionally generous at 1,200 songs per month — far beyond Suno's free limits. Best for creators who need high-volume music generation with strong vocal quality.", quickStart: "Sign up at udio.com → Describe your song (genre, mood, topic) → Generate up to 1,200 songs per month on the free tier", free: "1,200 free songs/month — most generous in class", company: "Udio", oss: false, privacy: "Non-commercial on free tier", tags: ["music","vocals","generous"] },
+
+  // ── Added by Arsenal Curator (2026-04-24) ──
+  { id: "c19", name: "Nano Banana", url: "deepmind.google/models/gemini-image", category: "Creative AI", subcategory: "Image Generation", desc: "Google's conversational image gen/edit — best-in-class character consistency across edits", detail: "Gemini 2.5 Flash Image (codenamed 'Nano Banana') went viral for conversationally editing images while preserving character identity across iterations. Change expressions, outfits, or scenes without losing the subject — a capability that Midjourney and Stable Diffusion still struggle with. Free in the Gemini app; API access for devs through Google AI Studio.", quickStart: "Visit gemini.google.com → upload an image → ask 'change the background to a beach' or 'make them smiling' → iterate with follow-up edits that stay consistent", free: "Unlimited in Gemini app (free tier); Google AI Studio API credits for devs", company: "Google DeepMind", oss: false, privacy: "Free tier data may train models outside EU/UK", tags: ["image","editing","gemini","google"] },
 ];
 
 // Add dateAdded to all tools — recent additions get actual dates, rest get baseline
 const RECENT_TOOL_DATES = {
+  "c19": "2026-04-24",
   "c18": "2026-04-23",
   "c17": "2026-04-23",
   "c16": "2026-04-23",
