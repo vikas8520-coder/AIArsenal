@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import StackBuilderClient from "../../../src/components/StackBuilderClient";
 import { decodeCustomStack } from "../../../src/utils/customStack";
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({ searchParams }) {
   const sp = await searchParams;
   const encoded = typeof sp?.s === "string" ? sp.s : "";

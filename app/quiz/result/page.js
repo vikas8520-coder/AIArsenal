@@ -5,6 +5,9 @@ import { getArchetypeBySlug } from "../../../src/data/quiz-archetypes";
 
 const BASE_URL = "https://ai-arsenal-nu.vercel.app";
 
+// Always render on request — never cache stale results by s=
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({ searchParams }) {
   const sp = await searchParams;
   const encoded = typeof sp?.s === "string" ? sp.s : "";

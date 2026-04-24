@@ -1,5 +1,7 @@
 import ChatClient from "../../src/components/ChatClient";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Ask AIArsenal — Conversational AI Tool Advisor",
   description:

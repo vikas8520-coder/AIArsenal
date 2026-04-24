@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import ScaffoldClient from "../../src/components/ScaffoldClient";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "AI Starter Kit Generator — Turn Any Stack Into Code | AIArsenal",
   description:
