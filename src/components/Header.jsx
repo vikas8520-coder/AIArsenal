@@ -251,6 +251,29 @@ export default function Header({
           + BUILD
         </a>
 
+        {/* Scaffold — AI starter kit generator */}
+        <a
+          href="/scaffold"
+          title="Generate a starter kit from a stack"
+          className="hide-mobile"
+          style={{
+            ...pillStyle,
+            textDecoration: "none",
+            color: "#a855f7",
+            borderColor: "rgba(168,85,247,0.35)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = "rgba(168,85,247,0.6)";
+            e.currentTarget.style.background = "rgba(168,85,247,0.08)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = "rgba(168,85,247,0.35)";
+            e.currentTarget.style.background = "var(--surface-1)";
+          }}
+        >
+          ⚡ SCAFFOLD
+        </a>
+
         {/* Stacks */}
         <a
           href="/stacks"

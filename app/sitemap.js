@@ -76,6 +76,12 @@ export default function sitemap() {
       priority: 0.9,
     },
     {
+      url: `${BASE_URL}/scaffold`,
+      lastModified: new Date().toISOString(),
+      changeFrequency: "monthly",
+      priority: 0.85,
+    },
+    {
       url: `${BASE_URL}/get-featured`,
       lastModified: new Date().toISOString(),
       changeFrequency: "monthly",

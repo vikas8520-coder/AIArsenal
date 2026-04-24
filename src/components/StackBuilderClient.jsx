@@ -574,6 +574,18 @@ export default function StackBuilderClient({ readOnly = false, initialEncoded = 
           >
             {copied === "share" ? "✓ LINK COPIED" : "↗ SHARE"}
           </button>
+          {stack.roles.length > 0 && (
+            <a
+              href={`/scaffold?s=${encoded}`}
+              style={{
+                ...pillBtn("#a855f7", true),
+                textDecoration: "none",
+                display: "inline-block",
+              }}
+            >
+              ⚡ SCAFFOLD
+            </a>
+          )}
         </div>
       </div>
       {savedNote && (

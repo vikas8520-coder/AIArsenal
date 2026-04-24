@@ -119,8 +119,8 @@ export default function QuizResultClient({ result }) {
     });
   };
 
-  // Build a /build URL with the quiz tools pre-loaded
-  const builderUrl = useMemo(() => {
+  // Build a /build and /scaffold URL with the quiz tools pre-loaded
+  const stackEncoded = useMemo(() => {
     const customStack = {
       name: `My ${archetype.name} stack`,
       description: archetype.tagline,
@@ -129,8 +129,11 @@ export default function QuizResultClient({ result }) {
         toolId: t.id,
       })),
     };
-    return `/build?s=${encodeCustomStack(customStack)}`;
+    return encodeCustomStack(customStack);
   }, [archetype, result.tools]);
+
+  const builderUrl = `/build?s=${stackEncoded}`;
+  const scaffoldUrl = `/scaffold?s=${stackEncoded}`;
 
   return (
     <div style={{ position: "relative", minHeight: "100vh" }}>
@@ -423,7 +426,7 @@ export default function QuizResultClient({ result }) {
             }}
           >
             <Link
-              href={builderUrl}
+              href={scaffoldUrl}
               style={{
                 padding: "12px 22px",
                 background: accent,
@@ -436,7 +439,24 @@ export default function QuizResultClient({ result }) {
                 textDecoration: "none",
               }}
             >
-              CUSTOMIZE IN BUILDER →
+              ⚡ GENERATE STARTER KIT →
+            </Link>
+            <Link
+              href={builderUrl}
+              style={{
+                padding: "12px 22px",
+                background: "var(--surface-1)",
+                color: "var(--text-strong)",
+                border: "1px solid var(--border-bright)",
+                fontFamily: "monospace",
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: 1,
+                borderRadius: 10,
+                textDecoration: "none",
+              }}
+            >
+              CUSTOMIZE →
             </Link>
             <button
               onClick={copyShare}
