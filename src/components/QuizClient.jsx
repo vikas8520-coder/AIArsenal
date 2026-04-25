@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
 import { ANSWER_LABELS } from "../data/quiz-archetypes";
 import { encodeQuizResult } from "../utils/quizResult";
+import { readProfile } from "../lib/visitorIntel";
 
 const ACCENT = "#00f0ff";
 
@@ -85,6 +86,13 @@ function shouldSkip(question, answers) {
 // ──────────────────────────────────────────────────────────────────────────
 
 function Intro({ onStart }) {
+  const [savedCount, setSavedCount] = useState(0);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const p = readProfile();
+    setSavedCount((p.savedQuizResults || []).length);
+  }, []);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -98,6 +106,28 @@ function Intro({ onStart }) {
         padding: "8vh 24px 40px",
       }}
     >
+      {savedCount > 0 && (
+        <Link
+          href="/quiz/library"
+          style={{
+            position: "absolute",
+            top: 24,
+            right: 24,
+            padding: "8px 14px",
+            background: `${ACCENT}10`,
+            border: `1px solid ${ACCENT}40`,
+            color: ACCENT,
+            fontFamily: "monospace",
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: 1,
+            borderRadius: 8,
+            textDecoration: "none",
+          }}
+        >
+          ★ YOUR LIBRARY ({savedCount})
+        </Link>
+      )}
       <div
         style={{
           fontSize: 10,

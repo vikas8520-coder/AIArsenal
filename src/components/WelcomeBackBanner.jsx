@@ -49,6 +49,7 @@ export default function WelcomeBackBanner() {
   );
 
   const savedStacks = profile.savedStacks || [];
+  const savedQuizResults = profile.savedQuizResults || [];
   const returningUser = (profile.visitCount || 0) > 1;
 
   // Don't render on first visit or if dismissed
@@ -59,7 +60,8 @@ export default function WelcomeBackBanner() {
     archetype ||
     newTools.length > 0 ||
     lastViewed.length > 0 ||
-    savedStacks.length > 0;
+    savedStacks.length > 0 ||
+    savedQuizResults.length > 0;
   if (!hasReason) return null;
 
   const accent = archetype?.accent || "#00f0ff";
@@ -277,6 +279,31 @@ export default function WelcomeBackBanner() {
                   label={s.name}
                 />
               ))}
+            </IntelSection>
+          )}
+
+          {savedQuizResults.length > 0 && (
+            <IntelSection
+              label={`★ SAVED ARCHETYPES (${savedQuizResults.length})`}
+              labelColor="#eab308"
+            >
+              {savedQuizResults.slice(0, 3).map((r) => (
+                <Chip
+                  key={r.id}
+                  href={`/quiz/result?s=${r.encoded}`}
+                  color={r.archetypeAccent || accent}
+                  label={r.archetypeName}
+                />
+              ))}
+              <Chip
+                href="/quiz/library"
+                color="#eab308"
+                label={
+                  savedQuizResults.length > 3
+                    ? `+${savedQuizResults.length - 3} more →`
+                    : "View library →"
+                }
+              />
             </IntelSection>
           )}
 
