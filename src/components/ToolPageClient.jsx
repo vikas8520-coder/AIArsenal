@@ -10,6 +10,7 @@ import { getAttributes } from "@/src/data/tool-attributes";
 import { getToolSlug } from "@/src/lib/tools";
 import { getTypicalPairs } from "@/src/lib/typicalPairs";
 import { trackToolView } from "@/src/lib/visitorIntel";
+import ToolVoteButtons from "@/src/components/ToolVoteButtons";
 
 export default function ToolPageClient({ tool }) {
   const [bookmarked, setBookmarked] = useState(() => {
@@ -122,6 +123,9 @@ export default function ToolPageClient({ tool }) {
               >
                 {tool.desc}
               </p>
+              <div style={{ marginTop: 12 }}>
+                <ToolVoteButtons toolId={tool.id} accent={cat?.color} />
+              </div>
             </div>
             <button
               onClick={toggleBookmark}
