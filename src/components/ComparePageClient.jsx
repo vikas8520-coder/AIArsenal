@@ -619,6 +619,22 @@ export default function ComparePageClient({ toolA, toolB, related }) {
           >
             ASK AI →
           </Link>
+          <Link
+            href={`/compare/multi?ids=${toolA.id},${toolB.id}`}
+            style={{
+              fontFamily: "monospace",
+              fontSize: 11,
+              padding: "6px 12px",
+              background: "#a855f720",
+              border: "1px solid #a855f750",
+              color: "#a855f7",
+              borderRadius: 6,
+              textDecoration: "none",
+              fontWeight: 700,
+            }}
+          >
+            + COMPARE MORE TOOLS
+          </Link>
         </div>
       </div>
 
