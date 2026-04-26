@@ -2,6 +2,7 @@
 import { motion } from "framer-motion";
 import { TOOLS } from "../data/tools";
 import { CATEGORIES } from "../data/categories";
+import CategoryEmblem from "./CategoryEmblem";
 
 export default function CategoryHero({ cat, filteredCount }) {
   const isAll = cat.id === "all";
@@ -39,7 +40,7 @@ export default function CategoryHero({ cat, filteredCount }) {
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-            <span style={{ fontSize: 20, fontFamily: "monospace", color: cat.color }}>{cat.icon}</span>
+            <CategoryEmblem category={cat} size={28} accent={cat.color} />
             <h1 style={{ margin: 0, fontFamily: "monospace", fontWeight: 700, fontSize: 17, color: "var(--text-strong)" }}>
               {cat.label}
             </h1>

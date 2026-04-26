@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CATEGORIES } from "../data/categories";
+import CategoryEmblem from "./CategoryEmblem";
 
 const SHORTCUTS = [
   { key: "1–9", action: "Jump to category" },
@@ -225,16 +226,13 @@ export default function Sidebar({ activeCat, onSelect, toolCounts }) {
                 aria-pressed={isActive}
                 aria-label={`${cat.label} — ${count} tools`}
               >
-                {/* Icon */}
-                <span style={{
-                  fontSize: 14,
-                  color: isActive ? cat.color : "var(--text-muted)",
-                  flexShrink: 0,
-                  transition: "color 0.15s",
-                  fontFamily: "monospace",
-                }}>
-                  {cat.icon}
-                </span>
+                {/* Icon — generative emblem if /public/categories/<id>.jpg
+                    exists, glyph fallback otherwise */}
+                <CategoryEmblem
+                  category={cat}
+                  size={20}
+                  accent={isActive ? cat.color : "var(--text-muted)"}
+                />
 
                 {/* Label + count */}
                 {!collapsed && (
