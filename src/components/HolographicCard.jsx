@@ -2,6 +2,7 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import useDeviceTilt from "../hooks/useDeviceTilt";
+import { useShouldReduceMotion } from "../hooks/useIsMobile";
 
 /**
  * Tilt + holographic-foil card container. Wraps the quiz result content
@@ -17,6 +18,7 @@ export default function HolographicCard({ accent = "#00f0ff", children }) {
   const ref = useRef(null);
   const [hovered, setHovered] = useState(false);
   const [hasPointer, setHasPointer] = useState(true);
+  const reduced = useShouldReduceMotion();
 
   // Detect whether this device has a fine pointer (cursor); if not,
   // we drive tilt from the gyroscope instead.
@@ -149,30 +151,33 @@ export default function HolographicCard({ accent = "#00f0ff", children }) {
         }}
       />
 
-      {/* Layer 3: SVG noise texture for that "foil-card" grain */}
-      <svg
-        aria-hidden
-        style={{
-          position: "absolute",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          pointerEvents: "none",
-          opacity: 0.08,
-          mixBlendMode: "overlay",
-        }}
-      >
-        <filter id="holo-noise">
-          <feTurbulence
-            type="fractalNoise"
-            baseFrequency="1.4"
-            numOctaves="2"
-            stitchTiles="stitch"
-          />
-          <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0" />
-        </filter>
-        <rect width="100%" height="100%" filter="url(#holo-noise)" />
-      </svg>
+      {/* Layer 3: SVG noise — fractalNoise is GPU-expensive on mobile;
+          skip it on reduced-motion / coarse-pointer devices */}
+      {!reduced && (
+        <svg
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            pointerEvents: "none",
+            opacity: 0.08,
+            mixBlendMode: "overlay",
+          }}
+        >
+          <filter id="holo-noise">
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency="1.4"
+              numOctaves="2"
+              stitchTiles="stitch"
+            />
+            <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0" />
+          </filter>
+          <rect width="100%" height="100%" filter="url(#holo-noise)" />
+        </svg>
+      )}
 
       {/* Content — lifted above foil layers with translateZ */}
       <div

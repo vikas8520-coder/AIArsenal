@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { pollinationsUrl, signatureBackgroundPrompt } from "../utils/pollinations";
 import { useEffect, useState } from "react";
+import { useShouldReduceMotion } from "../hooks/useIsMobile";
 
 /**
  * Multi-layer atmospheric background for the quiz result page.
@@ -14,10 +15,14 @@ import { useEffect, useState } from "react";
  */
 export default function ArchetypeAura({ answers, archetype }) {
   const accent = archetype?.accent || "#00f0ff";
+  const reduced = useShouldReduceMotion();
 
-  // ── Layer 2: optional AI enhancement (fails silently) ────────────────
+  // ── Layer 2: optional AI enhancement (fails silently). Skip on mobile
+  // because (a) the network request alone wastes battery and (b) loading
+  // a 1600×900 image into a blurred backdrop is GPU-expensive.
   const [imgLoaded, setImgLoaded] = useState(false);
   const imgUrl = useMemo(() => {
+    if (reduced) return null;
     if (!answers || !archetype) return null;
     const prompt = signatureBackgroundPrompt(
       answers,
@@ -30,7 +35,7 @@ export default function ArchetypeAura({ answers, archetype }) {
       seed,
       model: "flux",
     });
-  }, [answers, archetype]);
+  }, [answers, archetype, reduced]);
 
   useEffect(() => {
     if (!imgUrl) return;
@@ -67,102 +72,116 @@ export default function ArchetypeAura({ answers, archetype }) {
         }}
       />
 
-      {/* Slowly-rotating conic gradient that fills the whole viewport.
-          Uses the accent color so each archetype has a unique palette. */}
-      <motion.div
-        aria-hidden
-        animate={{ rotate: 360 }}
-        transition={{ duration: 120, repeat: Infinity, ease: "linear" }}
-        style={{
-          position: "fixed",
-          top: "50%",
-          left: "50%",
-          width: "200vmax",
-          height: "200vmax",
-          marginTop: "-100vmax",
-          marginLeft: "-100vmax",
-          zIndex: 0,
-          pointerEvents: "none",
-          background: `conic-gradient(from 0deg, ${accent}00 0%, ${accent}22 15%, ${accent}00 30%, #a855f722 55%, ${accent}00 70%, ${accent}18 85%, ${accent}00 100%)`,
-          opacity: 0.7,
-        }}
-      />
+      {/* Slowly-rotating conic gradient — skipped on mobile / reduced.
+          200vmax × 200vmax of conic-gradient is the single most expensive
+          paint layer on the page, and on phones it forces a giant offscreen
+          composite buffer that bakes battery. */}
+      {!reduced && (
+        <motion.div
+          aria-hidden
+          animate={{ rotate: 360 }}
+          transition={{ duration: 120, repeat: Infinity, ease: "linear" }}
+          style={{
+            position: "fixed",
+            top: "50%",
+            left: "50%",
+            width: "200vmax",
+            height: "200vmax",
+            marginTop: "-100vmax",
+            marginLeft: "-100vmax",
+            zIndex: 0,
+            pointerEvents: "none",
+            background: `conic-gradient(from 0deg, ${accent}00 0%, ${accent}22 15%, ${accent}00 30%, #a855f722 55%, ${accent}00 70%, ${accent}18 85%, ${accent}00 100%)`,
+            opacity: 0.7,
+          }}
+        />
+      )}
 
-      {/* Three soft orbs that drift and breathe */}
+      {/* Soft orbs that drift and breathe. On reduced-motion devices we
+          drop one orb, halve the blur radius (cheaper composite), and stop
+          the breathing animation. */}
       <motion.div
         aria-hidden
-        animate={{
-          x: ["-10%", "15%", "-10%"],
-          y: ["-5%", "12%", "-5%"],
-        }}
-        transition={{
-          duration: 22,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
+        animate={
+          reduced
+            ? false
+            : {
+                x: ["-10%", "15%", "-10%"],
+                y: ["-5%", "12%", "-5%"],
+              }
+        }
+        transition={
+          reduced
+            ? undefined
+            : { duration: 22, repeat: Infinity, ease: "easeInOut" }
+        }
         style={{
           position: "fixed",
           top: "5%",
           left: "5%",
-          width: 480,
-          height: 480,
+          width: reduced ? 320 : 480,
+          height: reduced ? 320 : 480,
           borderRadius: "50%",
           background: accent,
-          opacity: 0.18,
-          filter: "blur(120px)",
+          opacity: reduced ? 0.22 : 0.18,
+          filter: reduced ? "blur(60px)" : "blur(120px)",
           zIndex: 0,
           pointerEvents: "none",
         }}
       />
-      <motion.div
-        aria-hidden
-        animate={{
-          x: ["10%", "-15%", "10%"],
-          y: ["10%", "-8%", "10%"],
-        }}
-        transition={{
-          duration: 28,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        style={{
-          position: "fixed",
-          bottom: "5%",
-          right: "5%",
-          width: 520,
-          height: 520,
-          borderRadius: "50%",
-          background: "#a855f7",
-          opacity: 0.14,
-          filter: "blur(140px)",
-          zIndex: 0,
-          pointerEvents: "none",
-        }}
-      />
-      <motion.div
-        aria-hidden
-        animate={{
-          scale: [1, 1.15, 1],
-          opacity: [0.1, 0.18, 0.1],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        style={{
-          position: "fixed",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: 720,
-          height: 720,
-          borderRadius: "50%",
-          background: `radial-gradient(circle, ${accent}40 0%, transparent 70%)`,
-          zIndex: 0,
-          pointerEvents: "none",
-        }}
-      />
+      {!reduced && (
+        <motion.div
+          aria-hidden
+          animate={{
+            x: ["10%", "-15%", "10%"],
+            y: ["10%", "-8%", "10%"],
+          }}
+          transition={{
+            duration: 28,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          style={{
+            position: "fixed",
+            bottom: "5%",
+            right: "5%",
+            width: 520,
+            height: 520,
+            borderRadius: "50%",
+            background: "#a855f7",
+            opacity: 0.14,
+            filter: "blur(140px)",
+            zIndex: 0,
+            pointerEvents: "none",
+          }}
+        />
+      )}
+      {!reduced && (
+        <motion.div
+          aria-hidden
+          animate={{
+            scale: [1, 1.15, 1],
+            opacity: [0.1, 0.18, 0.1],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          style={{
+            position: "fixed",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 720,
+            height: 720,
+            borderRadius: "50%",
+            background: `radial-gradient(circle, ${accent}40 0%, transparent 70%)`,
+            zIndex: 0,
+            pointerEvents: "none",
+          }}
+        />
+      )}
 
       {/* Starfield dot grid */}
       <div

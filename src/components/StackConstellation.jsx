@@ -5,6 +5,7 @@ import Link from "next/link";
 import { TOOLS } from "../data/tools";
 import { getToolSlug } from "../lib/tools";
 import { getCategoryById } from "../data/categories";
+import { useShouldReduceMotion } from "../hooks/useIsMobile";
 
 /**
  * SVG constellation — archetype at center, tools orbiting radially.
@@ -22,6 +23,7 @@ export default function StackConstellation({
 }) {
   const [hoveredIdx, setHoveredIdx] = useState(null);
   const [portraitLoaded, setPortraitLoaded] = useState(false);
+  const reduced = useShouldReduceMotion();
 
   // Dismiss the pinned tooltip when the user taps anywhere outside the
   // constellation (mobile usability — no mouseleave on touch devices)
@@ -136,8 +138,8 @@ export default function StackConstellation({
           transition={{ duration: 1.5, delay: reveal ? 0.2 : 0 }}
         />
 
-        {/* Pulsing concentric rings around center */}
-        {[0, 1, 2].map((i) => (
+        {/* Pulsing concentric rings around center — single ring on mobile */}
+        {(reduced ? [0] : [0, 1, 2]).map((i) => (
           <motion.circle
             key={`pulse-${i}`}
             cx={cx}
@@ -152,7 +154,7 @@ export default function StackConstellation({
               opacity: [0.45, 0],
             }}
             transition={{
-              duration: 3.5,
+              duration: reduced ? 5 : 3.5,
               delay: reveal ? 2.5 + i * 1.1 : i * 1.1,
               repeat: Infinity,
               ease: "easeOut",
@@ -205,11 +207,14 @@ export default function StackConstellation({
           );
         })}
 
-        {/* Continuous data-flow particles traveling outward along each line */}
+        {/* Continuous data-flow particles. Mobile / reduced-motion: 1 pulse
+            per line, slower cycle, no drop-shadow filter. Desktop: 2 pulses
+            with glowing drop-shadow. */}
         {positions.map((p, i) => {
           const cat = getCategoryById(tooledTools[i].tool.category);
           const color = cat?.color || accent;
-          return [0, 1].map((pulse) => (
+          const pulses = reduced ? [0] : [0, 1];
+          return pulses.map((pulse) => (
             <motion.circle
               key={`flow-${i}-${pulse}`}
               r="2.6"
@@ -221,16 +226,20 @@ export default function StackConstellation({
                 opacity: [0, 1, 1, 0],
               }}
               transition={{
-                duration: 2.4,
+                duration: reduced ? 4 : 2.4,
                 delay: reveal
                   ? 2.4 + i * 0.15 + pulse * 1.2
                   : i * 0.1 + pulse * 1.2,
                 repeat: Infinity,
-                repeatDelay: 1.2,
+                repeatDelay: reduced ? 3 : 1.2,
                 ease: "linear",
                 times: [0, 0.1, 0.85, 1],
               }}
-              style={{ filter: `drop-shadow(0 0 6px ${color})` }}
+              style={
+                reduced
+                  ? undefined
+                  : { filter: `drop-shadow(0 0 6px ${color})` }
+              }
             />
           ));
         })}
@@ -290,7 +299,7 @@ export default function StackConstellation({
             </text>
           )}
 
-          {/* Shimmering ring on top */}
+          {/* Shimmering ring on top — static on mobile (rotation kept GPU hot) */}
           <motion.circle
             cx={cx}
             cy={cy}
@@ -298,8 +307,12 @@ export default function StackConstellation({
             fill="none"
             stroke="url(#ring-shimmer)"
             strokeWidth="2.5"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            animate={reduced ? false : { rotate: 360 }}
+            transition={
+              reduced
+                ? undefined
+                : { duration: 20, repeat: Infinity, ease: "linear" }
+            }
             style={{ transformOrigin: `${cx}px ${cy}px` }}
           />
         </motion.g>

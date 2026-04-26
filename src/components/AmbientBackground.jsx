@@ -1,14 +1,17 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import { useShouldReduceMotion } from "../hooks/useIsMobile";
 
 // Neural constellation canvas
 function ConstellationCanvas({ accentColor }) {
   const canvasRef = useRef(null);
   const animRef = useRef(null);
   const particlesRef = useRef([]);
+  const reduced = useShouldReduceMotion();
 
   useEffect(() => {
+    if (reduced) return; // Skip the canvas animation entirely on mobile / reduced-motion
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -20,8 +23,8 @@ function ConstellationCanvas({ accentColor }) {
     resize();
     window.addEventListener("resize", resize);
 
-    // Init particles
-    const count = 45;
+    // Init particles — fewer on smaller screens
+    const count = window.innerWidth < 720 ? 22 : 45;
     particlesRef.current = Array.from({ length: count }, () => ({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
@@ -30,7 +33,19 @@ function ConstellationCanvas({ accentColor }) {
       r: Math.random() * 1.5 + 0.5,
     }));
 
+    // Pause the loop when the tab is hidden
+    let paused = document.visibilityState === "hidden";
+    const onVis = () => {
+      paused = document.visibilityState === "hidden";
+      if (!paused && !animRef.current) animRef.current = requestAnimationFrame(draw);
+    };
+    document.addEventListener("visibilitychange", onVis);
+
     const draw = () => {
+      if (paused) {
+        animRef.current = null;
+        return;
+      }
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Parse accent color for rgba
@@ -82,9 +97,12 @@ function ConstellationCanvas({ accentColor }) {
 
     return () => {
       window.removeEventListener("resize", resize);
+      document.removeEventListener("visibilitychange", onVis);
       if (animRef.current) cancelAnimationFrame(animRef.current);
     };
-  }, [accentColor]);
+  }, [accentColor, reduced]);
+
+  if (reduced) return null;
 
   return (
     <canvas
@@ -105,49 +123,53 @@ export default function AmbientBackground({ orb1, orb2, accent, theme }) {
   const orb1Opacity = isLight ? 0.13 : 0.045;
   const orb2Opacity = isLight ? 0.11 : 0.04;
   const gridColor = isLight ? "rgba(0,0,0,0.025)" : "rgba(255,255,255,0.015)";
+  const reduced = useShouldReduceMotion();
 
+  // On mobile / reduced-motion: skip canvas, drop second orb, halve blur
   return (
     <>
-      {/* Constellation */}
+      {/* Constellation — opt-out on reduced motion */}
       <ConstellationCanvas accentColor={accent} />
 
       {/* Ambient orbs */}
       <motion.div
         key={orb1}
-        animate={{ background: orb1, opacity: orb1Opacity }}
+        animate={reduced ? false : { background: orb1, opacity: orb1Opacity }}
         transition={{ duration: 3, ease: "easeInOut" }}
         style={{
           position: "fixed",
           top: "-200px",
           left: "-150px",
-          width: "700px",
-          height: "700px",
+          width: reduced ? "420px" : "700px",
+          height: reduced ? "420px" : "700px",
           borderRadius: "50%",
-          filter: "blur(130px)",
+          filter: reduced ? "blur(70px)" : "blur(130px)",
           opacity: orb1Opacity,
           pointerEvents: "none",
           zIndex: 0,
           background: orb1,
         }}
       />
-      <motion.div
-        key={orb2}
-        animate={{ background: orb2, opacity: orb2Opacity }}
-        transition={{ duration: 3, ease: "easeInOut" }}
-        style={{
-          position: "fixed",
-          bottom: "-200px",
-          right: "-150px",
-          width: "700px",
-          height: "700px",
-          borderRadius: "50%",
-          filter: "blur(130px)",
-          opacity: orb2Opacity,
-          pointerEvents: "none",
-          zIndex: 0,
-          background: orb2,
-        }}
-      />
+      {!reduced && (
+        <motion.div
+          key={orb2}
+          animate={{ background: orb2, opacity: orb2Opacity }}
+          transition={{ duration: 3, ease: "easeInOut" }}
+          style={{
+            position: "fixed",
+            bottom: "-200px",
+            right: "-150px",
+            width: "700px",
+            height: "700px",
+            borderRadius: "50%",
+            filter: "blur(130px)",
+            opacity: orb2Opacity,
+            pointerEvents: "none",
+            zIndex: 0,
+            background: orb2,
+          }}
+        />
+      )}
 
       {/* Grid overlay */}
       <div
