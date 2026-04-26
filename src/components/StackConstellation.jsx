@@ -23,6 +23,17 @@ export default function StackConstellation({
   const [hoveredIdx, setHoveredIdx] = useState(null);
   const [portraitLoaded, setPortraitLoaded] = useState(false);
 
+  // Dismiss the pinned tooltip when the user taps anywhere outside the
+  // constellation (mobile usability — no mouseleave on touch devices)
+  useEffect(() => {
+    if (hoveredIdx == null) return;
+    const handler = (e) => {
+      if (!e.target.closest("svg")) setHoveredIdx(null);
+    };
+    document.addEventListener("touchstart", handler, { passive: true });
+    return () => document.removeEventListener("touchstart", handler);
+  }, [hoveredIdx]);
+
   const size = 640;
   const cx = size / 2;
   const cy = size / 2;
@@ -329,6 +340,14 @@ export default function StackConstellation({
               }}
               onMouseEnter={() => setHoveredIdx(i)}
               onMouseLeave={() => setHoveredIdx(null)}
+              onTouchStart={(e) => {
+                // First tap: pin the tooltip. Second tap on the same node:
+                // navigate. Tapping a different node moves the pin.
+                if (hoveredIdx !== i) {
+                  e.preventDefault();
+                  setHoveredIdx(i);
+                }
+              }}
               style={{ cursor: "pointer" }}
             >
               <Link href={`/tools/${getToolSlug(entry.tool)}`}>

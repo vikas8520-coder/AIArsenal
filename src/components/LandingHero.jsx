@@ -12,6 +12,7 @@ import KineticCounter from "./KineticCounter";
 import GenerativeSigil from "./GenerativeSigil";
 import { Scanlines, Grid, CornerMarks, SpecLabel } from "./CyberpunkChrome";
 import { readProfile, getEffectiveArchetype } from "../lib/visitorIntel";
+import useIsMobile from "../hooks/useIsMobile";
 
 const ACCENT = "#00f0ff";
 
@@ -30,6 +31,7 @@ export default function LandingHero({ accent = ACCENT, onExplore }) {
   const [visible, setVisible] = useState(true);
   const [feedIdx, setFeedIdx] = useState(0);
   const [archetype, setArchetype] = useState(null);
+  const isMobile = useIsMobile();
 
   // Honor the existing splash-gating contract: hidden after first interaction
   useEffect(() => {
@@ -92,22 +94,23 @@ export default function LandingHero({ accent = ACCENT, onExplore }) {
         flexDirection: "column",
       }}
     >
-      {/* Layered ambient background — same DNA as the quiz aura */}
-      <AmbientBackdrop accent={accent} />
-      <Grid color={`${accent}10`} />
-      <Scanlines opacity={0.03} />
-      <CornerMarks color={accent} inset={28} />
+      {/* Layered ambient background — same DNA as the quiz aura.
+          Lighter on mobile to save battery + keep the focus on content. */}
+      <AmbientBackdrop accent={accent} reduced={isMobile} />
+      {!isMobile && <Grid color={`${accent}10`} />}
+      <Scanlines opacity={isMobile ? 0.02 : 0.03} />
+      {!isMobile && <CornerMarks color={accent} inset={28} />}
 
       {/* Top bar */}
       <div
         style={{
           position: "relative",
           zIndex: 5,
-          padding: "22px 28px",
+          padding: isMobile ? "14px 16px" : "22px 28px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          gap: 12,
+          gap: 10,
           flexWrap: "wrap",
         }}
       >
@@ -179,7 +182,7 @@ export default function LandingHero({ accent = ACCENT, onExplore }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: "12px 24px 60px",
+          padding: isMobile ? "8px 12px 30px" : "12px 24px 60px",
           position: "relative",
           zIndex: 5,
           perspective: 1400,
@@ -204,14 +207,17 @@ export default function LandingHero({ accent = ACCENT, onExplore }) {
               ╶──── FREE AI TOOL DIRECTORY ────╴
             </motion.div>
 
-            {/* Hero: split — giant counter on the left, headline on the right */}
+            {/* Hero. Desktop: counter and headline side-by-side.
+                Mobile: counter ABOVE headline, both centered. */}
             <div
               style={{
                 display: "flex",
-                gap: 36,
-                alignItems: "center",
+                gap: isMobile ? 16 : 36,
+                alignItems: isMobile ? "flex-start" : "center",
+                flexDirection: isMobile ? "column" : "row",
                 flexWrap: "wrap",
-                marginBottom: 28,
+                marginBottom: isMobile ? 18 : 28,
+                textAlign: isMobile ? "left" : "left",
               }}
             >
               <motion.div
@@ -220,12 +226,14 @@ export default function LandingHero({ accent = ACCENT, onExplore }) {
                 transition={{ duration: 0.6, delay: 0.2 }}
                 style={{
                   fontFamily: "monospace",
-                  fontSize: "clamp(80px, 14vw, 168px)",
+                  fontSize: isMobile
+                    ? "clamp(64px, 22vw, 110px)"
+                    : "clamp(80px, 14vw, 168px)",
                   fontWeight: 700,
                   color: "var(--text-strong)",
-                  letterSpacing: -6,
+                  letterSpacing: isMobile ? -3.5 : -6,
                   lineHeight: 0.85,
-                  textShadow: `0 0 80px ${accent}30`,
+                  textShadow: `0 0 60px ${accent}30`,
                   flexShrink: 0,
                 }}
               >
@@ -236,12 +244,14 @@ export default function LandingHero({ accent = ACCENT, onExplore }) {
                 />
               </motion.div>
 
-              <div style={{ flex: 1, minWidth: 280 }}>
+              <div style={{ flex: 1, minWidth: 0, width: "100%" }}>
                 <h1
                   style={{
                     margin: 0,
                     fontFamily: "monospace",
-                    fontSize: "clamp(24px, 4vw, 38px)",
+                    fontSize: isMobile
+                      ? "clamp(22px, 7vw, 28px)"
+                      : "clamp(24px, 4vw, 38px)",
                     fontWeight: 700,
                     color: "var(--text-strong)",
                     letterSpacing: -0.6,
@@ -258,7 +268,9 @@ export default function LandingHero({ accent = ACCENT, onExplore }) {
                   style={{
                     margin: "8px 0 0",
                     fontFamily: "monospace",
-                    fontSize: "clamp(24px, 4vw, 38px)",
+                    fontSize: isMobile
+                      ? "clamp(22px, 7vw, 28px)"
+                      : "clamp(24px, 4vw, 38px)",
                     fontWeight: 700,
                     color: accent,
                     letterSpacing: -0.6,
@@ -276,77 +288,94 @@ export default function LandingHero({ accent = ACCENT, onExplore }) {
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.6, delay: 1.7 }}
                   style={{
-                    margin: "20px 0 0",
-                    fontSize: 14,
-                    lineHeight: 1.65,
+                    margin: isMobile ? "14px 0 0" : "20px 0 0",
+                    fontSize: isMobile ? 13 : 14,
+                    lineHeight: 1.6,
                     color: "var(--text-secondary)",
                     maxWidth: 480,
                   }}
                 >
-                  Curated, opinionated, hand-updated. Take the 60-second
-                  quiz to get a stack picked for you, or browse the catalog.
+                  {isMobile
+                    ? "Curated, hand-updated. Take the 60-second quiz or browse below."
+                    : "Curated, opinionated, hand-updated. Take the 60-second quiz to get a stack picked for you, or browse the catalog."}
                 </motion.p>
               </div>
             </div>
 
-            {/* Stats grid */}
+            {/* Stats grid — desktop: auto-fit. mobile: snap-scrolling row */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 1.9 }}
               style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))",
-                gap: 1,
-                background: `${accent}12`,
-                border: `1px solid ${accent}25`,
+                display: isMobile ? "flex" : "grid",
+                gridTemplateColumns: isMobile
+                  ? undefined
+                  : "repeat(auto-fit, minmax(110px, 1fr))",
+                gap: isMobile ? 8 : 1,
+                background: isMobile ? "transparent" : `${accent}12`,
+                border: isMobile ? "none" : `1px solid ${accent}25`,
                 borderRadius: 10,
-                overflow: "hidden",
-                marginBottom: 26,
+                overflow: isMobile ? "auto" : "hidden",
+                overflowY: "hidden",
+                marginBottom: isMobile ? 18 : 26,
+                marginLeft: isMobile ? -4 : 0,
+                marginRight: isMobile ? -4 : 0,
+                paddingLeft: isMobile ? 4 : 0,
+                paddingRight: isMobile ? 4 : 0,
+                scrollSnapType: isMobile ? "x mandatory" : "none",
+                WebkitOverflowScrolling: "touch",
               }}
+              className="no-scrollbar"
             >
               <StatTile
                 label="OSS TOOLS"
                 value={stats.oss}
                 accent="#00ff88"
                 delay={1900}
+                isMobile={isMobile}
               />
               <StatTile
                 label="CATEGORIES"
                 value={stats.categories}
                 accent="#b388ff"
                 delay={2000}
+                isMobile={isMobile}
               />
               <StatTile
                 label="STACKS"
                 value={stats.stacks}
                 accent="#a855f7"
                 delay={2100}
+                isMobile={isMobile}
               />
               <StatTile
                 label="COMPARISONS"
                 value={stats.comparisons}
                 accent="#eab308"
                 delay={2200}
+                isMobile={isMobile}
               />
               <StatTile
                 label="ARCHETYPES"
                 value={stats.archetypes}
                 accent={accent}
                 delay={2300}
+                isMobile={isMobile}
               />
             </motion.div>
 
-            {/* CTAs */}
+            {/* CTAs — full-width stacked on mobile so they're tap-friendly */}
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 2.4 }}
               style={{
-                display: "flex",
+                display: isMobile ? "grid" : "flex",
+                gridTemplateColumns: isMobile ? "1fr 1fr" : undefined,
                 gap: 8,
                 flexWrap: "wrap",
-                marginBottom: 24,
+                marginBottom: isMobile ? 18 : 24,
               }}
             >
               <button
@@ -594,13 +623,18 @@ function FlashLetters({ text, delay = 0, accent }) {
   );
 }
 
-function StatTile({ label, value, accent, delay }) {
+function StatTile({ label, value, accent, delay, isMobile }) {
   return (
     <div
       style={{
-        padding: "14px 14px",
+        padding: isMobile ? "10px 14px" : "14px 14px",
         background: "rgba(13,13,15,0.7)",
         textAlign: "center",
+        flexShrink: 0,
+        minWidth: isMobile ? 96 : undefined,
+        border: isMobile ? `1px solid ${accent}30` : "none",
+        borderRadius: isMobile ? 8 : 0,
+        scrollSnapAlign: isMobile ? "start" : "none",
       }}
     >
       <div
@@ -617,7 +651,7 @@ function StatTile({ label, value, accent, delay }) {
       <div
         style={{
           fontFamily: "monospace",
-          fontSize: 24,
+          fontSize: isMobile ? 20 : 24,
           fontWeight: 700,
           color: accent,
           letterSpacing: -0.5,
@@ -630,26 +664,30 @@ function StatTile({ label, value, accent, delay }) {
   );
 }
 
-function AmbientBackdrop({ accent }) {
+function AmbientBackdrop({ accent, reduced = false }) {
   return (
     <>
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 140, repeat: Infinity, ease: "linear" }}
-        style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          width: "200vmax",
-          height: "200vmax",
-          marginTop: "-100vmax",
-          marginLeft: "-100vmax",
-          zIndex: 0,
-          pointerEvents: "none",
-          background: `conic-gradient(from 0deg, ${accent}00 0%, ${accent}1c 15%, ${accent}00 30%, #a855f71c 55%, ${accent}00 70%, ${accent}14 85%, ${accent}00 100%)`,
-          opacity: 0.6,
-        }}
-      />
+      {/* Skip the rotating conic gradient on mobile — it's the
+          most expensive layer and gets clipped by the viewport anyway. */}
+      {!reduced && (
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 140, repeat: Infinity, ease: "linear" }}
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            width: "200vmax",
+            height: "200vmax",
+            marginTop: "-100vmax",
+            marginLeft: "-100vmax",
+            zIndex: 0,
+            pointerEvents: "none",
+            background: `conic-gradient(from 0deg, ${accent}00 0%, ${accent}1c 15%, ${accent}00 30%, #a855f71c 55%, ${accent}00 70%, ${accent}14 85%, ${accent}00 100%)`,
+            opacity: 0.6,
+          }}
+        />
+      )}
       <motion.div
         animate={{
           x: ["-10%", "12%", "-10%"],
@@ -660,36 +698,38 @@ function AmbientBackdrop({ accent }) {
           position: "absolute",
           top: "5%",
           left: "5%",
-          width: 480,
-          height: 480,
+          width: reduced ? 320 : 480,
+          height: reduced ? 320 : 480,
           borderRadius: "50%",
           background: accent,
-          opacity: 0.16,
-          filter: "blur(120px)",
+          opacity: reduced ? 0.22 : 0.16,
+          filter: reduced ? "blur(80px)" : "blur(120px)",
           zIndex: 0,
           pointerEvents: "none",
         }}
       />
-      <motion.div
-        animate={{
-          x: ["10%", "-12%", "10%"],
-          y: ["10%", "-8%", "10%"],
-        }}
-        transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
-        style={{
-          position: "absolute",
-          bottom: "5%",
-          right: "5%",
-          width: 520,
-          height: 520,
-          borderRadius: "50%",
-          background: "#a855f7",
-          opacity: 0.13,
-          filter: "blur(140px)",
-          zIndex: 0,
-          pointerEvents: "none",
-        }}
-      />
+      {!reduced && (
+        <motion.div
+          animate={{
+            x: ["10%", "-12%", "10%"],
+            y: ["10%", "-8%", "10%"],
+          }}
+          transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
+          style={{
+            position: "absolute",
+            bottom: "5%",
+            right: "5%",
+            width: 520,
+            height: 520,
+            borderRadius: "50%",
+            background: "#a855f7",
+            opacity: 0.13,
+            filter: "blur(140px)",
+            zIndex: 0,
+            pointerEvents: "none",
+          }}
+        />
+      )}
     </>
   );
 }

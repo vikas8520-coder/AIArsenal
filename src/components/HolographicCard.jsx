@@ -1,6 +1,7 @@
 "use client";
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import useDeviceTilt from "../hooks/useDeviceTilt";
 
 /**
  * Tilt + holographic-foil card container. Wraps the quiz result content
@@ -15,10 +16,31 @@ import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 export default function HolographicCard({ accent = "#00f0ff", children }) {
   const ref = useRef(null);
   const [hovered, setHovered] = useState(false);
+  const [hasPointer, setHasPointer] = useState(true);
 
-  // Normalized mouse position inside the card (0..1 on each axis)
+  // Detect whether this device has a fine pointer (cursor); if not,
+  // we drive tilt from the gyroscope instead.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(pointer: coarse)");
+    const update = () => setHasPointer(!mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  const deviceTilt = useDeviceTilt({ enabled: !hasPointer });
+
+  // Normalized mouse/tilt position inside the card (0..1 on each axis)
   const mx = useMotionValue(0.5);
   const my = useMotionValue(0.5);
+
+  // Push gyroscope readings into the same motion values when there's no cursor
+  useEffect(() => {
+    if (hasPointer || !deviceTilt) return;
+    mx.set(deviceTilt.x);
+    my.set(deviceTilt.y);
+  }, [hasPointer, deviceTilt, mx, my]);
 
   // Spring-smoothed versions for a floaty feel
   const smx = useSpring(mx, { stiffness: 150, damping: 20 });
@@ -63,7 +85,7 @@ export default function HolographicCard({ accent = "#00f0ff", children }) {
   return (
     <motion.div
       ref={ref}
-      onMouseMove={onMove}
+      onMouseMove={hasPointer ? onMove : undefined}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={onLeave}
       initial={{ opacity: 0, y: 12, scale: 0.985 }}
@@ -74,7 +96,7 @@ export default function HolographicCard({ accent = "#00f0ff", children }) {
         maxWidth: 920,
         margin: "0 auto",
         borderRadius: 20,
-        padding: "40px 36px 48px",
+        padding: "clamp(20px, 4vw, 40px) clamp(16px, 4vw, 36px) clamp(24px, 5vw, 48px)",
         background: "rgba(13,13,15,0.7)",
         backdropFilter: "blur(18px)",
         WebkitBackdropFilter: "blur(18px)",
