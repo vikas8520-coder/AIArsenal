@@ -24,6 +24,7 @@ import SharePanel from "@/src/components/SharePanel";
 import CostCalculator from "@/src/components/CostCalculator";
 import LandingHero from "@/src/components/LandingHero";
 import WelcomeBackBanner from "@/src/components/WelcomeBackBanner";
+import KineticHero from "@/src/components/KineticHero";
 
 // Group tools by subcategory, sponsored tools float to top
 function groupBySubcategory(tools) {
@@ -287,8 +288,13 @@ export default function DirectoryClient() {
           style={{ flex: 1, overflowY: "auto", padding: "20px 20px 40px" }}
           aria-label="Tool library"
         >
-          {/* Category Hero */}
-          <CategoryHero cat={activeCatObj} filteredCount={filtered.length} />
+          {/* Kinetic landing hero (All Tools view only) */}
+          {showSpotlight && <KineticHero accent={activeCatObj.color} />}
+
+          {/* Category-specific hero strip (every category EXCEPT All Tools) */}
+          {!showSpotlight && (
+            <CategoryHero cat={activeCatObj} filteredCount={filtered.length} />
+          )}
 
           {/* Personalized welcome-back banner (All Tools only) */}
           {showSpotlight && <WelcomeBackBanner />}
