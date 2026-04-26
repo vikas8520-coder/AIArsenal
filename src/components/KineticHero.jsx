@@ -20,6 +20,7 @@ import {
   readProfile,
   getEffectiveArchetype,
 } from "../lib/visitorIntel";
+import useIsMobile from "../hooks/useIsMobile";
 
 const ACCENT = "#00f0ff";
 
@@ -34,6 +35,7 @@ const TRENDING_HEADLINES = [
 ];
 
 export default function KineticHero({ accent = ACCENT }) {
+  const isMobile = useIsMobile();
   const ossCount = useMemo(() => TOOLS.filter((t) => t.oss).length, []);
   const stats = {
     tools: TOOLS.length,
@@ -72,7 +74,7 @@ export default function KineticHero({ accent = ACCENT }) {
   }, []);
 
   return (
-    <div style={{ marginBottom: 28, perspective: 1400 }}>
+    <div style={{ marginBottom: 28, perspective: 1400, width: "100%", maxWidth: "100%" }}>
       <HolographicCard accent={accent}>
         {/* Top spec strip */}
         <div
@@ -139,10 +141,11 @@ export default function KineticHero({ accent = ACCENT }) {
         <div
           style={{
             display: "flex",
-            gap: 28,
-            alignItems: "center",
+            gap: isMobile ? 14 : 28,
+            alignItems: isMobile ? "flex-start" : "center",
+            flexDirection: isMobile ? "column" : "row",
             flexWrap: "wrap",
-            marginBottom: 24,
+            marginBottom: isMobile ? 16 : 24,
           }}
         >
           <motion.div
@@ -151,17 +154,19 @@ export default function KineticHero({ accent = ACCENT }) {
             transition={{ duration: 0.6, delay: 0.2 }}
             style={{
               fontFamily: "monospace",
-              fontSize: "clamp(72px, 14vw, 152px)",
+              fontSize: isMobile
+                ? "clamp(56px, 20vw, 96px)"
+                : "clamp(72px, 14vw, 152px)",
               fontWeight: 700,
               color: "var(--text-strong)",
-              letterSpacing: -5,
+              letterSpacing: isMobile ? -3 : -5,
               lineHeight: 0.85,
               textShadow: `0 0 60px ${accent}30`,
             }}
           >
             <KineticCounter target={stats.tools} duration={1800} delay={400} />
           </motion.div>
-          <div style={{ flex: 1, minWidth: 240 }}>
+          <div style={{ flex: 1, minWidth: 0, width: "100%" }}>
             <h1
               style={{
                 margin: 0,

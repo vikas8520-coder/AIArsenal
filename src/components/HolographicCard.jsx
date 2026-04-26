@@ -29,7 +29,9 @@ export default function HolographicCard({ accent = "#00f0ff", children }) {
     return () => mq.removeEventListener("change", update);
   }, []);
 
-  const deviceTilt = useDeviceTilt({ enabled: !hasPointer });
+  const { tilt: deviceTilt, needsPermission, request } = useDeviceTilt({
+    enabled: !hasPointer,
+  });
 
   // Normalized mouse/tilt position inside the card (0..1 on each axis)
   const mx = useMotionValue(0.5);
@@ -182,6 +184,34 @@ export default function HolographicCard({ accent = "#00f0ff", children }) {
       >
         {children}
       </div>
+
+      {/* iOS gyro permission affordance — only on touch devices that need it */}
+      {!hasPointer && needsPermission && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            request();
+          }}
+          style={{
+            position: "absolute",
+            top: 12,
+            right: 12,
+            zIndex: 5,
+            padding: "5px 10px",
+            background: `${accent}18`,
+            border: `1px solid ${accent}50`,
+            color: accent,
+            fontFamily: "var(--font-mono, monospace)",
+            fontSize: 9,
+            fontWeight: 700,
+            letterSpacing: 1.2,
+            borderRadius: 6,
+            cursor: "pointer",
+          }}
+        >
+          ⌖ TILT
+        </button>
+      )}
     </motion.div>
   );
 }

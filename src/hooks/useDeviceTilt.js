@@ -1,67 +1,69 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 
 /**
- * Listens to deviceorientation events on touch devices and returns a
- * normalized {x, y} pair where each value is between 0..1. x maps from
- * gamma (left/right tilt) and y from beta (front/back tilt).
+ * Listens to deviceorientation events on touch devices and returns
+ * { tilt, needsPermission, request } where:
+ *   - tilt: normalized {x, y} 0..1 derived from gamma/beta, or null
+ *   - needsPermission: true on iOS 13+ until permission has been granted
+ *   - request: call from a user gesture to trigger the iOS prompt
  *
- * Returns null on platforms that don't expose orientation. iOS 13+
- * requires explicit permission — we attempt to request it on the first
- * user touch, falling back silently if it isn't granted.
- *
- * Same shape as the cursor-driven {x, y} HolographicCard already uses,
- * so a component can swap them with one ternary.
+ * On non-iOS browsers we attach immediately and ignore needsPermission.
  */
 export default function useDeviceTilt({ enabled = true } = {}) {
   const [tilt, setTilt] = useState(null);
-  const askedRef = useRef(false);
+  const [needsPermission, setNeedsPermission] = useState(false);
+  const attachedRef = useRef(false);
+
+  const onOrientation = useCallback((e) => {
+    const g = Math.max(-30, Math.min(30, e.gamma ?? 0));
+    const b = Math.max(-30, Math.min(30, (e.beta ?? 0) - 30));
+    setTilt({
+      x: 0.5 + g / 60,
+      y: 0.5 + b / 60,
+    });
+  }, []);
+
+  const attach = useCallback(() => {
+    if (attachedRef.current) return;
+    attachedRef.current = true;
+    window.addEventListener("deviceorientation", onOrientation);
+    setNeedsPermission(false);
+  }, [onOrientation]);
+
+  // Public: request iOS permission. Must be called from a user gesture.
+  const request = useCallback(async () => {
+    if (typeof window === "undefined") return false;
+    if (typeof DeviceOrientationEvent === "undefined") return false;
+    try {
+      if (typeof DeviceOrientationEvent.requestPermission === "function") {
+        const r = await DeviceOrientationEvent.requestPermission();
+        if (r !== "granted") return false;
+      }
+      attach();
+      return true;
+    } catch {
+      attach();
+      return true;
+    }
+  }, [attach]);
 
   useEffect(() => {
     if (!enabled || typeof window === "undefined") return;
     if (typeof DeviceOrientationEvent === "undefined") return;
 
-    const onOrientation = (e) => {
-      // gamma: -90..90 (left/right)  beta: -180..180 (front/back)
-      const g = Math.max(-30, Math.min(30, e.gamma ?? 0));
-      const b = Math.max(-30, Math.min(30, (e.beta ?? 0) - 30));
-      setTilt({
-        x: 0.5 + g / 60, // 0..1
-        y: 0.5 + b / 60, // 0..1
-      });
-    };
-
-    // iOS 13+ Safari requires explicit permission on a user gesture
-    const requestIfNeeded = async () => {
-      if (askedRef.current) return;
-      askedRef.current = true;
-      try {
-        if (typeof DeviceOrientationEvent.requestPermission === "function") {
-          const r = await DeviceOrientationEvent.requestPermission();
-          if (r !== "granted") return;
-        }
-        window.addEventListener("deviceorientation", onOrientation);
-      } catch {
-        // Quiet fallback — non-iOS browsers fire events without permission
-        window.addEventListener("deviceorientation", onOrientation);
-      }
-    };
-
-    // Non-iOS: just attach. iOS: attach on first touch.
-    if (typeof DeviceOrientationEvent.requestPermission !== "function") {
-      window.addEventListener("deviceorientation", onOrientation);
+    if (typeof DeviceOrientationEvent.requestPermission === "function") {
+      // iOS 13+ — wait for explicit user gesture
+      setNeedsPermission(true);
     } else {
-      const onceTouch = () => {
-        requestIfNeeded();
-        window.removeEventListener("touchstart", onceTouch);
-      };
-      window.addEventListener("touchstart", onceTouch, { passive: true });
+      attach();
     }
 
     return () => {
       window.removeEventListener("deviceorientation", onOrientation);
+      attachedRef.current = false;
     };
-  }, [enabled]);
+  }, [enabled, attach, onOrientation]);
 
-  return tilt;
+  return { tilt, needsPermission, request };
 }

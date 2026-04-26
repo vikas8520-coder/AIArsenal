@@ -229,7 +229,7 @@ export default function DirectoryClient() {
   const hasResults = filtered.length > 0;
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)", position: "relative" }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)", position: "relative", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
       {/* Landing Hero (first visit) */}
       <LandingHero accent={activeCatObj.color} onExplore={() => {}} />
 
@@ -249,7 +249,7 @@ export default function DirectoryClient() {
       />
 
       {/* Main content */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", zIndex: 1, minWidth: 0 }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", zIndex: 1, minWidth: 0, width: "100%", maxWidth: "100%" }}>
         {/* Header */}
         <Header
           search={search}
@@ -285,7 +285,8 @@ export default function DirectoryClient() {
 
         {/* Scrollable content */}
         <main
-          style={{ flex: 1, overflowY: "auto", padding: "20px 20px 40px" }}
+          className="main-content-mobile"
+          style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "20px 20px 40px", minWidth: 0, width: "100%", maxWidth: "100%" }}
           aria-label="Tool library"
         >
           {/* Kinetic landing hero (All Tools view only) */}
