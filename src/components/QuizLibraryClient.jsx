@@ -414,6 +414,24 @@ function SavedCard({ entry, onRemove }) {
         >
           ⚡ SCAFFOLD
         </Link>
+        <a
+          href={`/api/quiz/poster?s=${entry.encoded}`}
+          download={`aiarsenal-${entry.archetypeSlug}-poster.png`}
+          style={{
+            padding: "8px 12px",
+            background: "var(--surface-2)",
+            color: "#a855f7",
+            border: "1px solid #a855f750",
+            fontFamily: "monospace",
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: 1,
+            borderRadius: 6,
+            textDecoration: "none",
+          }}
+        >
+          ↓ POSTER
+        </a>
       </div>
     </motion.div>
   );

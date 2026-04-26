@@ -205,6 +205,35 @@ export default function QuizResultClient({ result }) {
     }
   };
 
+  const downloadPoster = async () => {
+    if (typeof window === "undefined") return;
+    const url = `/api/quiz/poster?s=${quizEncoded}`;
+    const safe = (archetype.name || "stack")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = `aiarsenal-${safe}-poster.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(objectUrl);
+      if (window.plausible) {
+        window.plausible("Quiz Poster Downloaded", {
+          props: { archetype: archetype.slug },
+        });
+      }
+    } catch {
+      // Fall back to opening in a new tab if blob download fails
+      window.open(url, "_blank");
+    }
+  };
+
   // Build a /build and /scaffold URL with the quiz tools pre-loaded
   const stackEncoded = useMemo(() => {
     const customStack = {
@@ -722,6 +751,23 @@ export default function QuizResultClient({ result }) {
               }}
             >
               {saved ? "★ SAVED" : "☆ SAVE FOR LATER"}
+            </button>
+            <button
+              onClick={downloadPoster}
+              style={{
+                padding: "12px 22px",
+                background: "var(--surface-1)",
+                color: "#a855f7",
+                border: "1px solid #a855f750",
+                fontFamily: "monospace",
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: 1,
+                borderRadius: 10,
+                cursor: "pointer",
+              }}
+            >
+              ↓ POSTER (1080×1920)
             </button>
             <button
               onClick={replayStory}
