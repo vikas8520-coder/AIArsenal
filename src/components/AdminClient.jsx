@@ -335,6 +335,10 @@ export default function AdminClient() {
   const [data, setData] = useState(null);
   const [newsletter, setNewsletter] = useState(null);
   const [nlLoading, setNlLoading] = useState(false);
+  const [blogDraft, setBlogDraft] = useState(null);
+  const [blogLoading, setBlogLoading] = useState(false);
+  const [blogError, setBlogError] = useState(null);
+  const [blogCopied, setBlogCopied] = useState(false);
   const [nlError, setNlError] = useState(null);
   const [copied, setCopied] = useState(false);
 
@@ -401,6 +405,46 @@ export default function AdminClient() {
     } finally {
       setNlLoading(false);
     }
+  };
+
+  const draftBlogPost = async (question) => {
+    if (!password || blogLoading || !question) return;
+    setBlogLoading(true);
+    setBlogError(null);
+    setBlogDraft(null);
+    try {
+      const res = await fetch("/api/admin/blog-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, question }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `HTTP ${res.status}`);
+      }
+      const d = await res.json();
+      setBlogDraft({ ...d, sourceQuestion: question });
+    } catch (e) {
+      setBlogError(e.message);
+    } finally {
+      setBlogLoading(false);
+    }
+  };
+
+  const copyBlogJson = () => {
+    if (!blogDraft) return;
+    const entry = {
+      slug: blogDraft.slug,
+      title: blogDraft.title,
+      description: blogDraft.description,
+      date: new Date().toISOString().slice(0, 10),
+      tags: blogDraft.tags,
+      content: blogDraft.markdown,
+    };
+    navigator.clipboard.writeText(JSON.stringify(entry, null, 2)).then(() => {
+      setBlogCopied(true);
+      setTimeout(() => setBlogCopied(false), 2000);
+    });
   };
 
   const copyNewsletter = () => {
@@ -660,7 +704,29 @@ export default function AdminClient() {
                   lineHeight: 1.5,
                 }}
               >
-                <div>{q.question}</div>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>{q.question}</div>
+                  <button
+                    onClick={() => draftBlogPost(q.question)}
+                    disabled={blogLoading}
+                    title="Draft a full blog post answering this question"
+                    style={{
+                      flexShrink: 0,
+                      fontSize: 9,
+                      fontFamily: "monospace",
+                      letterSpacing: 1,
+                      padding: "3px 8px",
+                      background: blogLoading ? "var(--surface-2)" : "rgba(0,240,255,0.12)",
+                      color: blogLoading ? "var(--text-faint)" : ACCENT,
+                      border: `1px solid ${blogLoading ? "var(--border)" : "rgba(0,240,255,0.4)"}`,
+                      borderRadius: 4,
+                      cursor: blogLoading ? "wait" : "pointer",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    ✎ DRAFT POST
+                  </button>
+                </div>
                 <div
                   style={{
                     marginTop: 4,
@@ -676,6 +742,126 @@ export default function AdminClient() {
           </div>
         )}
       </Section>
+
+      {/* Blog post drafter — shows when user clicked DRAFT POST on a question */}
+      {(blogDraft || blogLoading || blogError) && (
+        <Section
+          title="Blog post draft"
+          subtitle={
+            blogDraft?.sourceQuestion
+              ? `Drafted from: "${blogDraft.sourceQuestion.slice(0, 80)}${blogDraft.sourceQuestion.length > 80 ? "..." : ""}"`
+              : "Generating from the selected question"
+          }
+          right={
+            blogDraft && (
+              <button
+                onClick={copyBlogJson}
+                style={{
+                  fontFamily: "monospace",
+                  fontSize: 11,
+                  padding: "8px 14px",
+                  background: blogCopied ? "#10b98118" : `${ACCENT}20`,
+                  border: `1px solid ${blogCopied ? "#10b98150" : `${ACCENT}50`}`,
+                  color: blogCopied ? "#10b981" : ACCENT,
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  fontWeight: 700,
+                  letterSpacing: 0.5,
+                }}
+              >
+                {blogCopied ? "✓ COPIED JSON" : "COPY AS BLOG ENTRY"}
+              </button>
+            )
+          }
+        >
+          {blogLoading && (
+            <div
+              style={{
+                fontFamily: "monospace",
+                fontSize: 12,
+                color: "var(--text-secondary)",
+              }}
+            >
+              <motion.span
+                animate={{ opacity: [0.4, 1, 0.4] }}
+                transition={{ duration: 1.2, repeat: Infinity }}
+              >
+                Drafting ~1000-word post with citations...
+              </motion.span>
+            </div>
+          )}
+          {blogError && (
+            <div
+              style={{
+                fontFamily: "monospace",
+                fontSize: 11,
+                color: "#f87171",
+              }}
+            >
+              {blogError}
+            </div>
+          )}
+          {blogDraft && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div
+                style={{
+                  padding: "12px 14px",
+                  background: "var(--surface-2)",
+                  border: `1px solid ${ACCENT}30`,
+                  borderRadius: 8,
+                  fontFamily: "monospace",
+                  fontSize: 12,
+                  display: "grid",
+                  gridTemplateColumns: "80px 1fr",
+                  gap: "6px 12px",
+                }}
+              >
+                <span style={{ color: "var(--text-faint)", letterSpacing: 1 }}>SLUG</span>
+                <span style={{ color: ACCENT }}>{blogDraft.slug}</span>
+                <span style={{ color: "var(--text-faint)", letterSpacing: 1 }}>TITLE</span>
+                <span style={{ color: "var(--text-strong)" }}>{blogDraft.title}</span>
+                <span style={{ color: "var(--text-faint)", letterSpacing: 1 }}>META</span>
+                <span style={{ color: "var(--text-default)" }}>{blogDraft.description}</span>
+                <span style={{ color: "var(--text-faint)", letterSpacing: 1 }}>TAGS</span>
+                <span style={{ color: "var(--text-default)" }}>
+                  {(blogDraft.tags || []).join(", ")}
+                </span>
+              </div>
+              <pre
+                style={{
+                  padding: 16,
+                  background: "var(--surface-2)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 10,
+                  fontFamily: "monospace",
+                  fontSize: 12,
+                  color: "var(--text-default)",
+                  lineHeight: 1.65,
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                  maxHeight: 520,
+                  overflowY: "auto",
+                  margin: 0,
+                }}
+              >
+                {blogDraft.markdown}
+              </pre>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontFamily: "monospace",
+                  color: "var(--text-faint)",
+                  lineHeight: 1.5,
+                }}
+              >
+                Paste the JSON entry into{" "}
+                <span style={{ color: ACCENT }}>src/data/blog-posts.js</span>,
+                commit, and the post auto-publishes at /blog/{blogDraft.slug}.
+              </div>
+            </div>
+          )}
+        </Section>
+      )}
 
       {/* Newsletter drafter */}
       <Section
