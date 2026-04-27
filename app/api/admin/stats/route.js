@@ -76,10 +76,24 @@ export async function POST(request) {
   if (password !== ADMIN_PASSWORD) return unauthorized("bad password");
 
   // ── Airtable data ──
-  const [leads, questions] = await Promise.all([
+  const [leads, questions, submissions] = await Promise.all([
     fetchAirtable("Leads", "?pageSize=100&sort[0][field]=subscribed_at&sort[0][direction]=desc"),
     fetchAirtable("ChatQuestions", "?pageSize=100&sort[0][field]=asked_at&sort[0][direction]=desc"),
+    fetchAirtable("FeaturedSubmissions", "?pageSize=50&sort[0][field]=created_at&sort[0][direction]=desc"),
   ]);
+
+  const recentSubmissions = submissions.slice(0, 20).map((r) => ({
+    eventType: r.fields?.event_type || "—",
+    tier: r.fields?.tier || "—",
+    toolName: r.fields?.tool_name || "—",
+    toolUrl: r.fields?.tool_url || "",
+    contactName: r.fields?.contact_name || "",
+    contactEmail: r.fields?.contact_email || "",
+    pitch: r.fields?.pitch || "",
+    amount: r.fields?.amount || "",
+    status: r.fields?.status || "",
+    at: r.fields?.created_at || r.createdTime,
+  }));
 
   const leadSources = summarize(leads, "source");
   const recentLeads = leads.slice(0, 20).map((r) => ({
@@ -123,6 +137,13 @@ export async function POST(request) {
       questions: {
         total: questions.length,
         recent: recentQuestions,
+      },
+      featuredSubmissions: {
+        total: submissions.length,
+        pendingCount: submissions.filter(
+          (r) => r.fields?.status === "pending_review"
+        ).length,
+        recent: recentSubmissions,
       },
       plausible: {
         configured: Boolean(PLAUSIBLE_API_KEY),

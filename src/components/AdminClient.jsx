@@ -637,6 +637,100 @@ export default function AdminClient() {
         </Section>
       </div>
 
+      {/* Featured submissions — paid tools waiting for review */}
+      {data.featuredSubmissions && (
+        <Section
+          title={`★ Featured submissions${data.featuredSubmissions.pendingCount > 0 ? ` · ${data.featuredSubmissions.pendingCount} PENDING` : ""}`}
+          subtitle={`${data.featuredSubmissions.total} total · paid via Stripe`}
+        >
+          {(data.featuredSubmissions.recent || []).length === 0 ? (
+            <div
+              style={{
+                fontFamily: "monospace",
+                fontSize: 11,
+                color: "var(--text-faint)",
+              }}
+            >
+              No submissions yet. First one's coming.
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {data.featuredSubmissions.recent.map((s, i) => {
+                const isPending = s.status === "pending_review";
+                const tierColor =
+                  s.tier === "partner" ? "#a855f7" : "#eab308";
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      padding: "12px 14px",
+                      background: "var(--surface-2)",
+                      border: `1px solid ${isPending ? "#eab30850" : "var(--border)"}`,
+                      borderLeft: `3px solid ${tierColor}`,
+                      borderRadius: 8,
+                      fontFamily: "monospace",
+                      fontSize: 12,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: 8,
+                        flexWrap: "wrap",
+                        marginBottom: 6,
+                      }}
+                    >
+                      <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                        <span style={{ color: tierColor, fontWeight: 700, letterSpacing: 1 }}>
+                          {(s.tier || "—").toUpperCase()}
+                        </span>
+                        <span style={{ color: "var(--text-strong)", fontSize: 14, fontWeight: 700 }}>
+                          {s.toolName}
+                        </span>
+                        {s.amount && (
+                          <span style={{ color: "#10b981", fontSize: 11 }}>
+                            ${s.amount}
+                          </span>
+                        )}
+                      </div>
+                      <span
+                        style={{
+                          fontSize: 9,
+                          letterSpacing: 1.5,
+                          padding: "2px 8px",
+                          background: isPending ? "#eab30815" : "var(--surface-1)",
+                          color: isPending ? "#eab308" : "var(--text-faint)",
+                          borderRadius: 3,
+                          border: `1px solid ${isPending ? "#eab30840" : "var(--border)"}`,
+                        }}
+                      >
+                        {(s.status || "").toUpperCase().replace("_", " ")}
+                      </span>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "4px 12px", color: "var(--text-secondary)", fontSize: 11 }}>
+                      <span style={{ color: "var(--text-faint)" }}>URL</span>
+                      <a href={s.toolUrl} target="_blank" rel="noopener noreferrer" style={{ color: ACCENT, textDecoration: "none" }}>{s.toolUrl}</a>
+                      <span style={{ color: "var(--text-faint)" }}>FROM</span>
+                      <span>{s.contactName} · {s.contactEmail}</span>
+                      {s.pitch && (
+                        <>
+                          <span style={{ color: "var(--text-faint)" }}>PITCH</span>
+                          <span>{s.pitch}</span>
+                        </>
+                      )}
+                      <span style={{ color: "var(--text-faint)" }}>AT</span>
+                      <span>{s.at ? new Date(s.at).toLocaleString() : "—"}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Section>
+      )}
+
       {/* Leads */}
       <Section
         title="Recent leads"

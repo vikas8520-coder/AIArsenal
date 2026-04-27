@@ -46,7 +46,7 @@ const TIERS = [
       "Priority in AI Stack Planner recommendations",
       "Cancel anytime — no contracts",
     ],
-    cta: { label: "Get Featured", href: "mailto:partner@aiarsenal.dev?subject=Featured%20Listing%20Inquiry", primary: true },
+    cta: { label: "Get Featured", href: "/get-featured/checkout?tier=featured", primary: true },
   },
   {
     id: "partner",
@@ -66,7 +66,7 @@ const TIERS = [
       "Homepage spotlight rotation",
       "Quarterly performance report (clicks, conversions, UTM data)",
     ],
-    cta: { label: "Become a Partner", href: "mailto:partner@aiarsenal.dev?subject=Partner%20Tier%20Inquiry", primary: true },
+    cta: { label: "Become a Partner", href: "/get-featured/checkout?tier=partner", primary: true },
   },
 ];
 
@@ -671,8 +671,8 @@ export default function GetFeaturedClient() {
           We'll respond within one business day with traffic numbers and next
           steps.
         </p>
-        <a
-          href="mailto:partner@aiarsenal.dev?subject=Featured%20Listing%20Inquiry"
+        <Link
+          href="/get-featured/checkout?tier=featured"
           style={{
             display: "inline-block",
             padding: "14px 28px",
@@ -695,8 +695,8 @@ export default function GetFeaturedClient() {
             e.currentTarget.style.boxShadow = "none";
           }}
         >
-          partner@aiarsenal.dev →
-        </a>
+          ⚡ START — $99/mo
+        </Link>
       </div>
     </div>
   );
