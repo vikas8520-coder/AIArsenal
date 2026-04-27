@@ -13,83 +13,87 @@ const TIERS = [
     id: "editorial",
     label: "Editorial Listing",
     price: "Free",
-    priceSub: "review queue",
-    turnaround: "14–21 days",
-    color: "#64748b",
-    description:
-      "Submit and wait. Our editors evaluate every tool against a quality bar before adding. Free, but slow — and not every submission is accepted.",
-    benefits: [
-      "Standard listing in the 206+ tool directory",
-      "Appears in category filters + semantic search",
-      "Manual editorial review for fit and quality",
-      "No guaranteed acceptance",
-      "No affiliate tracking or placement",
-    ],
-    cta: { label: "Submit for review", href: "#submit", primary: false },
-  },
-  {
-    id: "featured",
-    label: "Featured",
-    price: "$99",
-    priceSub: "/month",
-    turnaround: "48 hours",
-    color: "#eab308",
+    priceSub: "always",
+    turnaround: "7–14 days",
+    color: "#10b981",
     highlighted: true,
-    badge: "MOST POPULAR",
+    badge: "100% FREE",
     description:
-      "Skip the queue and stand out. Your tool ships within 2 business days with a Featured badge, priority placement, and affiliate tracking built in.",
+      "Submit your tool. We review against a quality bar and add it if it's a fit. No payment, no upsell — every tool currently on AIArsenal got in this way.",
     benefits: [
-      'Pinned to the top of its category with a "FEATURED" badge',
-      "Included in conversational search responses when relevant",
-      "Affiliate link tracking + UTM attribution",
-      "Highlighted in weekly newsletter (20K+ subscribers)",
-      "Priority in AI Stack Planner recommendations",
-      "Cancel anytime — no contracts",
+      "Standard listing in the 207+ tool directory",
+      "Appears in category filters + semantic search",
+      "Eligible for /quiz, /ask, and /stacks recommendations",
+      "Editorial bestFor / notFor decision guides written for you",
+      "Outbound clicks attributed via UTM (you can see them in your analytics)",
+      "Affiliate URL accepted if you have a program — we'll wire it in for free",
     ],
-    cta: { label: "Get Featured", href: "/get-featured/checkout?tier=featured", primary: true },
+    cta: { label: "Submit your tool", href: "#submit", primary: true },
   },
   {
-    id: "partner",
-    label: "Partner",
-    price: "$299",
-    priceSub: "/month",
-    turnaround: "72 hours",
+    id: "affiliate",
+    label: "Affiliate Partner",
+    price: "Free",
+    priceSub: "rev-share",
+    turnaround: "Same day",
     color: "#a855f7",
     description:
-      "The full co-marketing package. For teams that want AIArsenal as an extended top-of-funnel growth channel.",
+      "Already have an affiliate program? We'll route AIArsenal traffic through your affiliate link. No flat fee — we earn only when your free-tier users convert to paid.",
     benefits: [
-      "Everything in Featured, plus:",
-      "Dedicated comparison page (/compare/your-tool-vs-X)",
-      "Editorial blog post (co-written, 1,500+ words, SEO-optimized)",
-      "Case study on the AIArsenal landing page",
-      "Custom landing page at /partners/[your-tool]",
-      "Homepage spotlight rotation",
-      "Quarterly performance report (clicks, conversions, UTM data)",
+      "Affiliate link replaces the standard outbound on your tool page",
+      "UTM attribution + your affiliate ID auto-injected",
+      "Sponsored badge optional (we recommend OFF for trust)",
+      "We never charge you a flat fee — pure rev-share",
+      "Cancel anytime — just email us to revert to plain link",
     ],
-    cta: { label: "Become a Partner", href: "/get-featured/checkout?tier=partner", primary: true },
+    cta: {
+      label: "Email partner@",
+      href: "mailto:partner@aiarsenal.dev?subject=Affiliate%20program%20offer",
+      primary: false,
+    },
+  },
+  {
+    id: "future",
+    label: "Paid placements",
+    price: "Coming",
+    priceSub: "later",
+    turnaround: "—",
+    color: "#64748b",
+    description:
+      "We may add paid Featured slots in the future once organic traffic + editorial trust are deeper. For now, every listing decision is purely on quality.",
+    benefits: [
+      "Currently: not available — please use Editorial or Affiliate tiers",
+      "When live: transparent pricing, all paid placements clearly badged",
+      "Editorial integrity comes first — no pay-to-play on quality",
+    ],
+    cta: { label: "Get notified", href: "mailto:partner@aiarsenal.dev?subject=Notify%20me%20when%20paid%20listings%20open", primary: false },
   },
 ];
 
 const FAQ = [
   {
-    q: "Why charge to be featured when the directory is free?",
-    a: "AIArsenal is 100% free for users and always will be. Featured + Partner tiers are how we keep it that way — they fund curation, hosting, and the AI recommender. Users don't pay; the platform funds itself from the tools that benefit most from placement.",
+    q: "How does AIArsenal make money if every listing is free?",
+    a: "We earn affiliate commissions when our users sign up to your free tier and eventually convert to a paid plan. If you have an affiliate program, we plug into it. If you don't, we get nothing — and that's fine, your listing is still permanent.",
   },
   {
-    q: "Do you disclose affiliate relationships?",
-    a: "Always. Every Featured tool carries a visible badge, affiliate links are transparent in the URL bar, and we display a disclosure on every card with a partner link. Users know exactly what's sponsored and what isn't.",
-  },
-  {
-    q: "Will featured placement affect my organic ranking if I cancel?",
-    a: "No. If you cancel, you keep your organic listing based on editorial merit. You only lose the Featured badge, priority placement, and affiliate tracking. Nothing is held hostage.",
+    q: "Do you disclose affiliate relationships to users?",
+    a: "Yes — every page footer carries an explicit affiliate disclosure, and we never let commission rates affect editorial decisions (which tools we list, how we describe them, what we recommend in the quiz). The disclosure is one click away from any tool card.",
   },
   {
     q: "What counts as a quality tool?",
-    a: "Live product (not a landing page). Clear free tier or credits. Real users. Not a scam or rebadged wrapper. We reject ~40% of submissions, including paid tiers — we protect the quality bar regardless of payment.",
+    a: "Live product (not a landing page). Clear free tier or credits. Real users. Not a scam or rebadged wrapper. We reject ~40% of submissions and the bar applies whether or not you have an affiliate program.",
   },
   {
-    q: "Can I see traffic numbers before committing?",
-    a: "Yes. Email partner@aiarsenal.dev and we'll share current traffic, demographics, and historical click-through rates for similar tools in your category.",
+    q: "How long does review take?",
+    a: "7–14 days typically. We process submissions in batches and write the editorial copy (description, bestFor / notFor) ourselves so each tool fits the format. We'll email you when it's live.",
+  },
+  {
+    q: "I have an affiliate program — how do I share the link?",
+    a: "Just include it when you submit (or email partner@aiarsenal.dev with your tool URL + affiliate URL). We'll wire it as the outbound link on your tool's page so we get credit for conversions. UTM source is auto-set to 'aiarsenal'.",
+  },
+  {
+    q: "Will you ever charge for placement?",
+    a: "Possibly later, once organic traffic and editorial trust are deeper. If we do, paid slots will be clearly badged and editorial decisions will stay independent. For now, every listing decision is purely on quality.",
   },
 ];
 
@@ -345,14 +349,14 @@ export default function GetFeaturedClient() {
             fontSize: 10,
             fontFamily: "monospace",
             letterSpacing: 2,
-            color: ACCENT,
+            color: "#10b981",
             padding: "4px 12px",
-            border: `1px solid ${ACCENT}40`,
+            border: `1px solid #10b98140`,
             borderRadius: 4,
             marginBottom: 18,
           }}
         >
-          FOR AI TOOL BUILDERS
+          FOR AI TOOL BUILDERS · 100% FREE
         </div>
         <h1
           style={{
@@ -365,8 +369,8 @@ export default function GetFeaturedClient() {
             lineHeight: 1.1,
           }}
         >
-          Reach builders who are <br />
-          <span style={{ color: ACCENT }}>actively choosing tools</span>
+          Get listed on AIArsenal. <br />
+          <span style={{ color: "#10b981" }}>Zero fee, ever.</span>
         </h1>
         <p
           style={{
@@ -377,9 +381,10 @@ export default function GetFeaturedClient() {
             color: "var(--text-secondary)",
           }}
         >
-          AIArsenal's 20,000+ monthly users are technical, high-intent, and
-          mid-decision. They arrive searching for specific AI capabilities and
-          leave having picked a tool. Get featured and be part of that decision.
+          AIArsenal is funded entirely by affiliate commissions when our users
+          sign up to your free tier and later upgrade. There's no flat listing
+          fee — submit your tool and if it clears editorial review it gets
+          listed permanently for free.
         </p>
         <div
           style={{
@@ -390,9 +395,9 @@ export default function GetFeaturedClient() {
             flexWrap: "wrap",
           }}
         >
-          <Stat value="206+" label="tools curated" />
-          <Stat value="20K+" label="monthly users" color="#00ff88" />
-          <Stat value="48hr" label="to live" color={ACCENT} />
+          <Stat value="207" label="tools listed" />
+          <Stat value="$0" label="listing fee" color="#10b981" />
+          <Stat value="7–14d" label="review window" color="#a855f7" />
           <Stat value="40%" label="rejection rate" color="#ef5350" />
         </div>
       </div>
@@ -525,7 +530,7 @@ export default function GetFeaturedClient() {
             color: "var(--text-strong)",
           }}
         >
-          From submission to featured — 48 hours
+          From submission to listed — 7–14 days
         </h2>
         <div
           style={{
@@ -538,22 +543,22 @@ export default function GetFeaturedClient() {
             {
               step: "1",
               title: "Submit",
-              body: "Email partner@aiarsenal.dev with your tool URL + Featured tier choice.",
+              body: "Use the form below — name, URL, free tier details, optional affiliate link. Takes 2 minutes.",
             },
             {
               step: "2",
-              title: "Quick review",
-              body: "We check product quality, free tier accuracy, and category fit within 24 hours.",
+              title: "Editorial review",
+              body: "We check product quality, free tier accuracy, and category fit. ~40% rejection rate.",
             },
             {
               step: "3",
-              title: "Onboard",
-              body: "You confirm listing copy + affiliate link + UTM params. Billed monthly.",
+              title: "We write your copy",
+              body: "If accepted, we draft your description, bestFor / notFor, and quickStart so it fits the format.",
             },
             {
               step: "4",
-              title: "Ship",
-              body: "Live within 48 hours with Featured badge, priority placement, and affiliate tracking.",
+              title: "Live forever",
+              body: "Listed permanently in the directory, comparison pages, /quiz pool, and /ask recommendations.",
             },
           ].map(({ step, title, body }) => (
             <div
@@ -656,7 +661,7 @@ export default function GetFeaturedClient() {
             color: "var(--text-strong)",
           }}
         >
-          Ready to get featured?
+          Submit your tool
         </h2>
         <p
           style={{
@@ -667,16 +672,15 @@ export default function GetFeaturedClient() {
             color: "var(--text-secondary)",
           }}
         >
-          Email us with your tool, your preferred tier, and any questions.
-          We'll respond within one business day with traffic numbers and next
-          steps.
+          Free, permanent, no upsell. Just give us the basics + your affiliate
+          link if you have one. We'll review within 7–14 days.
         </p>
         <Link
-          href="/get-featured/checkout?tier=featured"
+          href="/?submit=1"
           style={{
             display: "inline-block",
             padding: "14px 28px",
-            background: ACCENT,
+            background: "#10b981",
             color: "#000",
             textDecoration: "none",
             fontFamily: "monospace",
@@ -688,15 +692,32 @@ export default function GetFeaturedClient() {
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = "translateY(-1px)";
-            e.currentTarget.style.boxShadow = `0 8px 24px ${ACCENT}40`;
+            e.currentTarget.style.boxShadow = `0 8px 24px #10b98140`;
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = "translateY(0)";
             e.currentTarget.style.boxShadow = "none";
           }}
         >
-          ⚡ START — $99/mo
+          + SUBMIT YOUR TOOL →
         </Link>
+        <div
+          style={{
+            marginTop: 18,
+            fontSize: 11,
+            fontFamily: "monospace",
+            color: "var(--text-faint)",
+            letterSpacing: 0.5,
+          }}
+        >
+          Have an affiliate program? Email{" "}
+          <a
+            href="mailto:partner@aiarsenal.dev?subject=Affiliate%20program%20offer"
+            style={{ color: "#a855f7" }}
+          >
+            partner@aiarsenal.dev
+          </a>
+        </div>
       </div>
     </div>
   );

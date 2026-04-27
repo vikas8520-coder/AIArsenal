@@ -6,6 +6,7 @@ import { TOOLS, isNewTool } from "../data/tools";
 import { getAttributes } from "../data/tool-attributes";
 import { findSimilarTools } from "../utils/similarTools";
 import { readProfile, trackToolView } from "../lib/visitorIntel";
+import { getOutboundHref } from "../lib/outbound";
 
 export function SkeletonCard() {
   return (
@@ -22,16 +23,10 @@ export function SkeletonCard() {
   );
 }
 
+// Always go through /go/[slug] so UTM stamping + affiliate swaps live in one
+// place server-side. Pass source so we can attribute the click context later.
 function getToolUrl(tool) {
-  if (tool.affiliate) {
-    const url = new URL(tool.affiliate);
-    url.searchParams.set("utm_source", "aiarsenal");
-    url.searchParams.set("utm_medium", "directory");
-    url.searchParams.set("utm_campaign", "tools");
-    return url.toString();
-  }
-  const raw = tool.url;
-  return raw.startsWith("http://") || raw.startsWith("https://") ? raw : `https://${raw}`;
+  return getOutboundHref(tool, "directory");
 }
 
 function trackClick(tool) {
