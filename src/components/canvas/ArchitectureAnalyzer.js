@@ -218,6 +218,7 @@ function getToolRole(toolName, toolCategory, toolSubcategory) {
 }
 
 /**
+      /**
  * Analyze canvas topology and return issues + corrected architecture
  */
 export function analyzeArchitecture(nodes, edges) {
