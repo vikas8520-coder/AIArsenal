@@ -309,6 +309,138 @@ function CanvasInner() {
     }
   }, [showToast]);
 
+  // ── Cost Calculator ──
+  const calculateCost = useCallback(() => {
+    // Pricing estimates per tool (monthly USD)
+    const pricingMap = {
+      "ChatGPT": 20,
+      "Claude": 20,
+      "Gemini": 20,
+      "Perplexity": 20,
+      "Cursor": 20,
+      "GitHub Copilot": 10,
+      "Tabnine": 12,
+      "Continue.dev": 0,
+      "Amazon Q": 0,
+      "Cody": 0,
+      "Codeium": 0,
+      "CodeWhisperer": 0,
+      "Supermaven": 10,
+      "n8n": 20, // cloud
+      "Activepieces": 0,
+      "Zapier": 30,
+      "Make": 9,
+      "LangChain": 0,
+      "LangGraph": 0,
+      "AutoGen": 0,
+      "CrewAI": 0,
+      "Semantic Kernel": 0,
+      "OpenClaw": 0,
+      "Khoj": 0,
+      "aidaemon": 0,
+      "Supabase": 25,
+      "PocketBase": 0,
+      "Appwrite": 0,
+      "Firebase": 25,
+      "PlanetScale": 29,
+      "Neon": 19,
+      "Turso": 0,
+      "Vercel": 20,
+      "Netlify": 19,
+      "Railway": 5,
+      "Render": 7,
+      "Fly.io": 5,
+      "Cloudflare": 5,
+      "Google Cloud": 300,
+      "AWS": 300,
+      "Azure": 300,
+      "DigitalOcean": 12,
+      "Linode": 5,
+      "Hetzner": 5,
+      "Ollama": 0,
+      "vLLM": 0,
+      "LM Studio": 0,
+      "Jan": 0,
+      "GPT4All": 0,
+      "KoboldCPP": 0,
+      "Llama.cpp": 0,
+      "ExLlamaV2": 0,
+      "Transformers": 0,
+      "Sentence Transformers": 0,
+      "LangSmith": 39,
+      "Weights & Biases": 0,
+      "MLflow": 0,
+      "ClearML": 0,
+      "Comet": 0,
+      "Neptune": 0,
+      "TensorBoard": 0,
+      "Prometheus": 0,
+      "Grafana": 0,
+      "Datadog": 31,
+      "New Relic": 49,
+      "Sentry": 26,
+      "LogRocket": 69,
+      "PostHog": 0,
+      "Plausible": 9,
+      "Umami": 0,
+      "Matomo": 0,
+      "Notion": 10,
+      "Obsidian": 0,
+      "Roam": 15,
+      "Logseq": 0,
+      "RemNote": 8,
+      "Craft": 6,
+      "Affine": 0,
+      "AnyType": 0,
+      "Standard Notes": 0,
+      "Joplin": 0,
+      "UpNote": 3,
+      "Linear": 8,
+      "Height": 0,
+      "Plane": 0,
+      "Taiga": 0,
+      "GitHub Projects": 0,
+      "GitLab": 0,
+      "Bitbucket": 0,
+      "Sourcehut": 2,
+      "GitKraken": 5,
+      "Tower": 69,
+      "Fork": 0,
+      "GitHub Desktop": 0,
+      "LazyGit": 0,
+      "Tig": 0,
+      "Magit": 0,
+    };
+
+    let total = 0;
+    const paidTools = [];
+
+    nodes.forEach((node) => {
+      if (node.type === "tool" && node.data?.label) {
+        const label = node.data.label;
+        // Find matching pricing (case-insensitive partial match)
+        for (const [toolName, price] of Object.entries(pricingMap)) {
+          if (label.toLowerCase().includes(toolName.toLowerCase()) || toolName.toLowerCase().includes(label.toLowerCase())) {
+            if (price > 0) {
+              total += price;
+              paidTools.push({ name: label, price });
+            }
+            break;
+          }
+        }
+        // Default: if tool has "Free" pricing, $0; if "Paid" and not matched, estimate $15
+        if (node.data.pricing === "Paid" && !paidTools.find(t => t.name === label)) {
+          total += 15;
+          paidTools.push({ name: label, price: 15 });
+        }
+      }
+    });
+
+    return { total, paidTools, freeCount: nodes.filter(n => n.type === "tool" && n.data?.pricing === "Free").length };
+  }, [nodes]);
+
+  const costInfo = calculateCost();
+
   const handleExport = useCallback(() => {
     const data = { nodes, edges, exportedAt: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -582,6 +714,8 @@ function CanvasInner() {
         canRedo={canRedo}
         advisorOpen={advisorOpen}
         saveState={saveState}
+        totalCost={costInfo.total}
+        paidToolCount={costInfo.paidTools.length}
       />
 
       {/* Template dropdown */}

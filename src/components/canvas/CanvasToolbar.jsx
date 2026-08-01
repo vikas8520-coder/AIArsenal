@@ -23,9 +23,13 @@ export default function CanvasToolbar({
   canUndo,
   canRedo,
   saveState = "idle",
+  totalCost = 0,
+  paidToolCount = 0,
 }) {
   const saveLabel =
     saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved ✓" : "Save";
+
+  const costColor = totalCost === 0 ? "#22c55e" : totalCost <= 50 ? "#f59e0b" : "#ef4444";
 
   return (
     <div
@@ -60,6 +64,45 @@ export default function CanvasToolbar({
         <div style={{ fontSize: 10, color: "var(--text-faint)", fontFamily: "monospace", whiteSpace: "nowrap" }}>
           {nodeCount} nodes · {edgeCount} links
         </div>
+        {totalCost > 0 && (
+          <div
+            style={{
+              background: `${costColor}18`,
+              color: costColor,
+              border: `1px solid ${costColor}40`,
+              borderRadius: 6,
+              padding: "2px 8px",
+              fontSize: 10,
+              fontFamily: "monospace",
+              fontWeight: 600,
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+            title={`${paidToolCount} paid tool${paidToolCount !== 1 ? "s" : ""}`}
+          >
+            💰 ${totalCost}/mo
+          </div>
+        )}
+        {totalCost === 0 && nodeCount > 0 && (
+          <div
+            style={{
+              background: "#22c55e18",
+              color: "#22c55e",
+              border: "1px solid #22c55e40",
+              borderRadius: 6,
+              padding: "2px 8px",
+              fontSize: 10,
+              fontFamily: "monospace",
+              fontWeight: 600,
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            💰 Free
+          </div>
+        )}
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
