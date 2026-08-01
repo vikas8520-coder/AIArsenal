@@ -16,6 +16,10 @@ export default function CanvasToolbar({
   onAutoLayout,
   onToggleAdvisor,
   advisorOpen,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
   saveState = "idle",
 }) {
   const saveLabel =
@@ -75,6 +79,22 @@ export default function CanvasToolbar({
         </button>
         <button onClick={onToggleAdvisor} title="Toggle advisor panel" style={{ ...btnStyle, ...(advisorOpen ? { color: "var(--accent, #00f0ff)" } : {}) }}>
           💡 Advisor
+        </button>
+        <button
+          onClick={onUndo}
+          disabled={!canUndo}
+          title="Undo (⌘Z)"
+          style={{ ...btnStyle, opacity: canUndo ? 1 : 0.35, cursor: canUndo ? "pointer" : "not-allowed" }}
+        >
+          ↶ Undo
+        </button>
+        <button
+          onClick={onRedo}
+          disabled={!canRedo}
+          title="Redo (⌘⇧Z)"
+          style={{ ...btnStyle, opacity: canRedo ? 1 : 0.35, cursor: canRedo ? "pointer" : "not-allowed" }}
+        >
+          ↷ Redo
         </button>
         <button onClick={onSave} style={{ ...btnStyle, ...(saveState === "saved" ? { color: "#22c55e" } : {}) }}>
           {saveLabel}

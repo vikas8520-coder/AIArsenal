@@ -46,6 +46,49 @@ function CanvasInner() {
   const [editingNodeId, setEditingNodeId] = useState(null);
   const [edgePanelId, setEdgePanelId] = useState(null);
 
+  const showToast = useCallback((msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2200);
+  }, []);
+
+  // ── Undo/Redo history ──
+  const [history, setHistory] = useState({ past: [], future: [] });
+  const MAX_HISTORY = 50;
+
+  const pushHistory = useCallback((newNodes, newEdges) => {
+    setHistory((h) => ({
+      past: [...h.past, { nodes: h.past.length ? h.past[h.past.length - 1].nodes : nodes, edges: h.past.length ? h.past[h.past.length - 1].edges : edges }].slice(-MAX_HISTORY),
+      future: [],
+    }));
+  }, [nodes, edges]);
+
+  const undo = useCallback(() => {
+    setHistory((h) => {
+      if (h.past.length === 0) return h;
+      const previous = h.past[h.past.length - 1];
+      const newPast = h.past.slice(0, -1);
+      setNodes(previous.nodes);
+      setEdges(previous.edges);
+      return { past: newPast, future: [{ nodes, edges }, ...h.future].slice(0, MAX_HISTORY) };
+    });
+    showToast("Undo");
+  }, [nodes, edges, showToast]);
+
+  const redo = useCallback(() => {
+    setHistory((h) => {
+      if (h.future.length === 0) return h;
+      const next = h.future[0];
+      const newFuture = h.future.slice(1);
+      setNodes(next.nodes);
+      setEdges(next.edges);
+      return { past: [...h.past, { nodes, edges }].slice(-MAX_HISTORY), future: newFuture };
+    });
+    showToast("Redo");
+  }, [nodes, edges, showToast]);
+
+  const canUndo = history.past.length > 0;
+  const canRedo = history.future.length > 0;
+
   const { screenToFlowPosition, fitView } = useReactFlow();
   const savedNodesRef = useRef(nodes);
   const savedEdgesRef = useRef(edges);
@@ -93,10 +136,31 @@ function CanvasInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cmdS]);
 
-  const showToast = useCallback((msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2200);
-  }, []);
+  // ── Undo/Redo keyboard shortcuts ──
+  const cmdZ = useKeyPress(["meta+z", "ctrl+z"]);
+  useEffect(() => {
+    if (cmdZ) {
+      undo();
+    }
+  }, [cmdZ, undo]);
+
+  const cmdShiftZ = useKeyPress(["meta+shift+z", "ctrl+shift+z"]);
+  useEffect(() => {
+    if (cmdShiftZ) {
+      redo();
+    }
+  }, [cmdShiftZ, redo]);
+
+  // ── Push history on node/edge changes ──
+  const prevNodesRef = useRef(nodes);
+  const prevEdgesRef = useRef(edges);
+  useEffect(() => {
+    if (prevNodesRef.current !== nodes || prevEdgesRef.current !== edges) {
+      pushHistory(nodes, edges);
+      prevNodesRef.current = nodes;
+      prevEdgesRef.current = edges;
+    }
+  }, [nodes, edges, pushHistory]);
 
   // ── node/edge updates ──
   const onNodesChange = useCallback(
@@ -362,6 +426,10 @@ function CanvasInner() {
         onFitView={handleFitView}
         onAutoLayout={handleAutoLayout}
         onToggleAdvisor={() => setAdvisorOpen((v) => !v)}
+        onUndo={undo}
+        onRedo={redo}
+        canUndo={canUndo}
+        canRedo={canRedo}
         advisorOpen={advisorOpen}
         saveState={saveState}
       />
