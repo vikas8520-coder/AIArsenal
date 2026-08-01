@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { GOALS, analyzeCanvas, getGoal, toolNameById, toolCategoryById } from "@/src/data/goals";
+import { analyzeArchitecture } from "./ArchitectureAnalyzer";
 
 const TYPE_STYLE = {
   ok: { color: "#16a34a", icon: "✓", bg: "#dcfce7" },   // dark green on light green
@@ -14,11 +15,16 @@ const TYPE_STYLE = {
  * live suggestions about what's missing / redundant / worth adding.
  */
 export default function CanvasAdvisor({ nodes, edges, onApplyGoal, onAddTool, activeGoal, setActiveGoal }) {
-  const [view, setView] = useState("goals"); // "goals" | "advice"
+  const [view, setView] = useState("goals"); // "goals" | "advice" | "architecture"
 
   const suggestions = useMemo(
     () => analyzeCanvas(nodes, activeGoal),
     [nodes, activeGoal]
+  );
+
+  const architecture = useMemo(
+    () => analyzeArchitecture(nodes, edges),
+    [nodes, edges]
   );
 
   const appliedToolIds = useMemo(
@@ -100,6 +106,42 @@ export default function CanvasAdvisor({ nodes, edges, onApplyGoal, onAddTool, ac
               }}
             >
               {suggestions.length}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setView("architecture")}
+          style={{
+            flex: 1,
+            padding: "10px 0",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            fontFamily: "monospace",
+            fontSize: 9.5,
+            fontWeight: 700,
+            letterSpacing: 1,
+            textTransform: "uppercase",
+            color: view === "architecture" ? "var(--text-strong)" : "var(--text-faint)",
+            borderBottom: view === "architecture" ? "2px solid var(--accent, #00f0ff)" : "2px solid transparent",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 5,
+          }}
+        >
+          🏗 Architecture
+          {architecture.issues.length > 0 && (
+            <span
+              style={{
+                background: "#ef444420",
+                color: "#ef4444",
+                fontSize: 8.5,
+                padding: "0 5px",
+                borderRadius: 8,
+              }}
+            >
+              {architecture.issues.length}
             </span>
           )}
         </button>
@@ -201,6 +243,130 @@ export default function CanvasAdvisor({ nodes, edges, onApplyGoal, onAddTool, ac
                 Add tools to your canvas to get suggestions.
               </div>
             )}
+          </div>
+        )}
+        {view === "architecture" && (
+          <div>
+            <div style={{ fontSize: 10, color: "var(--text-faint)", lineHeight: 1.4, marginBottom: 8, padding: "0 2px" }}>
+              Architecture analysis of your canvas. {architecture.issues.length > 0 ? `${architecture.issues.length} issue${architecture.issues.length !== 1 ? "s" : ""} detected.` : "No major issues found."}
+            </div>
+            
+            {/* Issues */}
+            {architecture.issues.length > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 10, fontFamily: "monospace", fontWeight: 700, color: "var(--text-strong)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  Issues Detected
+                </div>
+                {architecture.issues.map((issue, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      background: "#ef444410",
+                      border: "1px solid #ef444430",
+                      borderLeft: "3px solid #ef4444",
+                      borderRadius: 8,
+                      padding: "8px 10px",
+                      marginBottom: 6,
+                      fontSize: 9.5,
+                      color: "var(--text-mid)",
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    <div style={{ fontWeight: 700, color: "#ef4444", marginBottom: 3 }}>{issue.name}</div>
+                    <div style={{ marginBottom: 4 }}>{issue.description}</div>
+                    <div style={{ fontSize: 8.5, color: "#a78bfa", fontFamily: "monospace" }}>
+                      Fix: {issue.fix}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Corrected Architecture */}
+            <div>
+              <div style={{ fontSize: 10, fontFamily: "monospace", fontWeight: 700, color: "var(--text-strong)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                Corrected Architecture ({architecture.corrected.appType})
+              </div>
+              
+              {/* Layers */}
+              <div style={{ marginBottom: 12 }}>
+                {architecture.corrected.layers.map((layer, li) => (
+                  <div key={li} style={{ marginBottom: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-strong)" }}>{layer.name}</span>
+                      {layer.recommended && (
+                        <span style={{ fontSize: 7.5, background: "#f59e0b20", color: "#f59e0b", padding: "0 4px", borderRadius: 3, fontFamily: "monospace" }}>recommended</span>
+                      )}
+                      {layer.parallel && (
+                        <span style={{ fontSize: 7.5, background: "#3b82f620", color: "#3b82f6", padding: "0 4px", borderRadius: 3, fontFamily: "monospace" }}>parallel</span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 8.5, color: "var(--text-faint)", marginBottom: 4 }}>
+                      {layer.description}
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                      {layer.tools.map((tool, ti) => (
+                        <span
+                          key={ti}
+                          style={{
+                            fontSize: 8.5,
+                            background: "var(--surface-2)",
+                            color: "var(--text-strong)",
+                            border: "1px solid var(--border)",
+                            borderRadius: 4,
+                            padding: "2px 6px",
+                            fontFamily: "monospace",
+                          }}
+                        >
+                          {tool}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Recommendations */}
+              {architecture.corrected.recommendations.length > 0 && (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 10, fontFamily: "monospace", fontWeight: 700, color: "var(--text-strong)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                    Recommendations
+                  </div>
+                  {architecture.corrected.recommendations.map((rec, ri) => (
+                    <div
+                      key={ri}
+                      style={{
+                        background: rec.type === 'fix' ? "#ef444410" : rec.type === 'add' ? "#3b82f610" : "#a78bfa10",
+                        border: rec.type === 'fix' ? "1px solid #ef444430" : rec.type === 'add' ? "1px solid #3b82f630" : "1px solid #a78bfa30",
+                        borderLeft: rec.type === 'fix' ? "3px solid #ef4444" : rec.type === 'add' ? "3px solid #3b82f6" : "3px solid #a78bfa",
+                        borderRadius: 8,
+                        padding: "8px 10px",
+                        marginBottom: 4,
+                        fontSize: 9.5,
+                        color: "var(--text-mid)",
+                        lineHeight: 1.45,
+                      }}
+                    >
+                      <div style={{ fontWeight: 700, marginBottom: 2 }}>
+                        {rec.type === 'fix' ? '🔧 Fix: ' : rec.type === 'add' ? '➕ Add: ' : '💡 '}
+                        {rec.title}
+                      </div>
+                      <div style={{ fontSize: 8.5, color: "var(--text-faint)" }}>{rec.description}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Mermaid Diagram */}
+              <details style={{ marginTop: 12 }}>
+                <summary style={{ fontSize: 9.5, color: "var(--text-mid)", cursor: "pointer", fontFamily: "monospace", fontWeight: 600 }}>
+                  View Mermaid Diagram
+                </summary>
+                <div style={{ marginTop: 8, fontSize: 8, fontFamily: "monospace", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 6, padding: 8, overflow: "auto", maxHeight: 200, color: "var(--text-mid)" }}>
+                  {architecture.corrected.mermaid}
+                </div>
+              </details>
+            </div>
           </div>
         )}
       </div>
