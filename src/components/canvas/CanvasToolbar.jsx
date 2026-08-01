@@ -13,6 +13,9 @@ export default function CanvasToolbar({
   onSave,
   onLoadTemplate,
   onFitView,
+  onAutoLayout,
+  onToggleAdvisor,
+  advisorOpen,
   saveState = "idle",
 }) {
   const saveLabel =
@@ -61,11 +64,17 @@ export default function CanvasToolbar({
         >
           ⚡ Templates
         </button>
+        <button onClick={onAutoLayout} title="Auto-arrange nodes" style={btnStyle}>
+          ⬜ Auto-layout
+        </button>
         <button onClick={onFitView} title="Zoom to fit all nodes" style={btnStyle}>
           ⌖ Fit
         </button>
         <button onClick={onExport} title="Export canvas as JSON" style={btnStyle}>
           ⇩ Export
+        </button>
+        <button onClick={onToggleAdvisor} title="Toggle advisor panel" style={{ ...btnStyle, ...(advisorOpen ? { color: "var(--accent, #00f0ff)" } : {}) }}>
+          💡 Advisor
         </button>
         <button onClick={onSave} style={{ ...btnStyle, ...(saveState === "saved" ? { color: "#22c55e" } : {}) }}>
           {saveLabel}
