@@ -273,6 +273,71 @@ export default function Sidebar({ activeCat, onSelect, toolCounts }) {
           })}
         </div>
 
+        {/* Compose section: Canvas + Automations */}
+        {!collapsed && (
+          <div style={{ padding: "8px 6px 0" }}>
+            <div
+              style={{
+                padding: "4px 10px 6px",
+                fontSize: 8.5,
+                fontFamily: "monospace",
+                letterSpacing: 2,
+                color: "var(--text-faint)",
+                textTransform: "uppercase",
+              }}
+            >
+              Compose
+            </div>
+            <Link
+              href="/canvas"
+              onClick={() => isMobile && setMobileOpen(false)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "8px 10px",
+                background: "var(--surface-2)",
+                border: "1px solid var(--border)",
+                borderRadius: 8,
+                textDecoration: "none",
+                fontFamily: "monospace",
+                fontSize: 11,
+                fontWeight: 600,
+                color: "var(--text-secondary)",
+                letterSpacing: 0.5,
+                transition: "all 0.15s",
+                marginBottom: 4,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--surface-3)";
+                e.currentTarget.style.color = "var(--text-strong)";
+                e.currentTarget.style.borderColor = "var(--border-bright)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "var(--surface-2)";
+                e.currentTarget.style.color = "var(--text-secondary)";
+                e.currentTarget.style.borderColor = "var(--border)";
+              }}
+            >
+              <span style={{ fontSize: 13, color: "#12b886" }}>⬗</span>
+              STACK CANVAS
+              <span
+                style={{
+                  marginLeft: "auto",
+                  fontSize: 8,
+                  background: "#12b88615",
+                  color: "#12b886",
+                  padding: "1px 5px",
+                  borderRadius: 3,
+                  letterSpacing: 0.3,
+                }}
+              >
+                NEW
+              </span>
+            </Link>
+          </div>
+        )}
+
         {/* Recent Stacks link */}
         {!collapsed && (
           <div style={{ padding: "8px 6px", borderTop: "1px solid var(--border)" }}>
