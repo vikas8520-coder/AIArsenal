@@ -2,6 +2,7 @@
 import { useMemo, useState } from "react";
 import { GOALS, analyzeCanvas, getGoal, toolNameById, toolCategoryById } from "@/src/data/goals";
 import { analyzeArchitecture } from "./ArchitectureAnalyzer";
+import MermaidDiagram from "./MermaidDiagram";
 
 const TYPE_STYLE = {
   ok: { color: "#16a34a", icon: "✓", bg: "#dcfce7" },   // dark green on light green
@@ -358,14 +359,12 @@ export default function CanvasAdvisor({ nodes, edges, onApplyGoal, onAddTool, ac
               )}
               
               {/* Mermaid Diagram */}
-              <details style={{ marginTop: 12 }}>
-                <summary style={{ fontSize: 9.5, color: "var(--text-mid)", cursor: "pointer", fontFamily: "monospace", fontWeight: 600 }}>
-                  View Mermaid Diagram
-                </summary>
-                <div style={{ marginTop: 8, fontSize: 8, fontFamily: "monospace", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 6, padding: 8, overflow: "auto", maxHeight: 200, color: "var(--text-mid)" }}>
-                  {architecture.corrected.mermaid}
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 10, fontFamily: "monospace", fontWeight: 700, color: "var(--text-strong)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  Architecture Diagram
                 </div>
-              </details>
+                <MermaidDiagram mermaidCode={architecture.corrected.mermaid} />
+              </div>
             </div>
           </div>
         )}
