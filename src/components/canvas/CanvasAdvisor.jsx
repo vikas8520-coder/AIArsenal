@@ -19,12 +19,26 @@ export default function CanvasAdvisor({ nodes, edges, onApplyGoal, onAddTool, ac
   const [view, setView] = useState("goals"); // "goals" | "advice" | "architecture"
 
   const suggestions = useMemo(
-    () => analyzeCanvas(nodes, activeGoal),
+    () => {
+      try {
+        return analyzeCanvas(nodes, activeGoal);
+      } catch (err) {
+        console.error("Canvas analysis error:", err);
+        return [];
+      }
+    },
     [nodes, activeGoal]
   );
 
   const architecture = useMemo(
-    () => analyzeArchitecture(nodes, edges),
+    () => {
+      try {
+        return analyzeArchitecture(nodes, edges);
+      } catch (err) {
+        console.error("Architecture analysis error:", err);
+        return { nodeRoles: {}, issues: [], corrected: { appType: "Custom AI Stack", layers: [], mermaid: "", recommendations: [] }, summary: {} };
+      }
+    },
     [nodes, edges]
   );
 
