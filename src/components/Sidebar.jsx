@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { CATEGORIES } from "../data/categories";
 import CategoryEmblem from "./CategoryEmblem";
@@ -271,6 +272,45 @@ export default function Sidebar({ activeCat, onSelect, toolCounts }) {
             );
           })}
         </div>
+
+        {/* Recent Stacks link */}
+        {!collapsed && (
+          <div style={{ padding: "8px 6px", borderTop: "1px solid var(--border)" }}>
+            <Link
+              href="/recent-stacks"
+              onClick={() => isMobile && setMobileOpen(false)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "8px 10px",
+                background: "var(--surface-2)",
+                border: "1px solid var(--border)",
+                borderRadius: 8,
+                textDecoration: "none",
+                fontFamily: "monospace",
+                fontSize: 11,
+                fontWeight: 600,
+                color: "var(--text-secondary)",
+                letterSpacing: 0.5,
+                transition: "all 0.15s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--surface-3)";
+                e.currentTarget.style.color = "var(--text-strong)";
+                e.currentTarget.style.borderColor = "var(--border-bright)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "var(--surface-2)";
+                e.currentTarget.style.color = "var(--text-secondary)";
+                e.currentTarget.style.borderColor = "var(--border)";
+              }}
+            >
+              <span style={{ fontSize: 13 }}>◈</span>
+              RECENT STACKS
+            </Link>
+          </div>
+        )}
 
         {/* Bottom: shortcuts hint */}
         {!collapsed && (

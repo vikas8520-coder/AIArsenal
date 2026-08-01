@@ -6,7 +6,7 @@ export const CATEGORIES = [
     color: "#00f0ff",
     orb1: "#00f0ff",
     orb2: "#3b82f6",
-    desc: "206+ vetted tools, credits, income paths, and AI system blueprints.",
+    desc: "240+ vetted tools, credits, income paths, and AI system blueprints.",
     mood: "Discovery",
   },
   {
@@ -138,6 +138,26 @@ export const CATEGORIES = [
     orb2: "#7c3aed",
     desc: "Personal AI daemons, second-brain systems, OSS reference implementations.",
     mood: "Personal, intelligent",
+  },
+  {
+    id: "CLI Tools",
+    label: "CLI Tools",
+    icon: "▶",
+    color: "#22d3ee",
+    orb1: "#22d3ee",
+    orb2: "#0891b2",
+    desc: "AI-powered command-line tools — coding agents, LLM runners, terminal assistants.",
+    mood: "Fast, terminal-native",
+  },
+  {
+    id: "MCP Servers",
+    label: "MCP Servers",
+    icon: "⬗",
+    color: "#12b886",
+    orb1: "#12b886",
+    orb2: "#4263eb",
+    desc: "Model Context Protocol servers — connect AI agents to databases, APIs, files, browsers, and 1000+ services. Free and paid options.",
+    mood: "Connected, extensible",
   },
 ];
 

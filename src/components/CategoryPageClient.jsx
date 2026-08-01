@@ -4,9 +4,13 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { getCategoryById } from "@/src/data/categories";
 import { getToolSlug } from "@/src/lib/tools";
+import useTheme from "@/src/hooks/useTheme";
+import { adjustColorForTheme } from "@/src/lib/colors";
 
 export default function CategoryPageClient({ category, tools }) {
+  const theme = useTheme();
   const cat = getCategoryById(category.id);
+  const catColor = adjustColorForTheme(cat?.color, theme);
 
   // Group tools by subcategory
   const grouped = new Map();
@@ -40,7 +44,7 @@ export default function CategoryPageClient({ category, tools }) {
             AIArsenal
           </Link>
           <span>›</span>
-          <span style={{ color: cat?.color || "var(--text-muted)" }}>{category.label}</span>
+          <span style={{ color: catColor || "var(--text-muted)" }}>{category.label}</span>
         </nav>
 
         {/* Hero */}
@@ -57,7 +61,7 @@ export default function CategoryPageClient({ category, tools }) {
                   fontFamily: "var(--font-mono)",
                   fontSize: 26,
                   fontWeight: 700,
-                  color: cat?.color || "var(--text-strong)",
+                  color: catColor || "var(--text-strong)",
                   margin: 0,
                 }}
               >
@@ -100,8 +104,8 @@ export default function CategoryPageClient({ category, tools }) {
                   fontFamily: "var(--font-mono)",
                   fontSize: 9,
                   padding: "1px 6px",
-                  background: `${cat?.color || "#00f0ff"}15`,
-                  color: cat?.color || "#00f0ff",
+                  background: `${catColor || "var(--badge-new-color)"}15`,
+                  color: catColor || "var(--badge-new-color)",
                   borderRadius: 3,
                 }}
               >
@@ -146,8 +150,8 @@ export default function CategoryPageClient({ category, tools }) {
                               style={{
                                 fontSize: 8,
                                 padding: "1px 5px",
-                                background: "rgba(0,255,136,0.1)",
-                                color: "#00ff88",
+                                background: "var(--badge-oss-bg)",
+                                color: "var(--badge-oss-color)",
                                 borderRadius: 3,
                                 marginLeft: 8,
                                 fontWeight: 700,

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import { TOOLS } from "../data/tools";
 import { CATEGORIES, getCategoryById } from "../data/categories";
 import { searchTools } from "../hooks/useSearch";
@@ -39,6 +40,11 @@ export default function CommandPalette({ open, onClose, onSelectCategory, onSele
   const [recents, setRecents] = useState(loadRecents);
   const inputRef = useRef(null);
   const listRef = useRef(null);
+  const dialogRef = useRef(null);
+  const prevFocusRef = useRef(null);
+  const wasOpenRef = useRef(false);
+
+  useFocusTrap({ open, containerRef: dialogRef, restoreFocus: false });
 
   const q = query.trim().toLowerCase();
 
@@ -55,13 +61,24 @@ export default function CommandPalette({ open, onClose, onSelectCategory, onSele
   const allResults = q.startsWith("/") ? matchedCats : matchedTools;
   const isCategory = q.startsWith("/");
 
-  // Reset on open, reload recents in case they changed
+  // Reset on open, reload recents in case they changed; restore focus on close
   useEffect(() => {
     if (open) {
+      wasOpenRef.current = true;
+      prevFocusRef.current = document.activeElement;
       setQuery("");
       setSelected(0);
       setRecents(loadRecents());
       setTimeout(() => inputRef.current?.focus(), 50);
+    } else if (wasOpenRef.current) {
+      wasOpenRef.current = false;
+      const prev = prevFocusRef.current;
+      prevFocusRef.current = null;
+      if (prev && document.contains(prev) && typeof prev.focus === "function") {
+        prev.focus();
+      } else {
+        document.body.focus();
+      }
     }
   }, [open]);
 
@@ -69,13 +86,21 @@ export default function CommandPalette({ open, onClose, onSelectCategory, onSele
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
+      // Never swallow Enter/Arrows from a focused control — result rows are
+      // buttons and fire their own onClick, chips/links need native activation.
+      const active = document.activeElement;
+      const onControl =
+        active && active !== inputRef.current &&
+        !!active.closest?.('button, a, [role="button"], [role="option"], select, textarea');
+
       if (e.key === "ArrowDown") {
-        e.preventDefault();
+        if (!onControl) e.preventDefault();
         setSelected((s) => Math.min(s + 1, allResults.length - 1));
       } else if (e.key === "ArrowUp") {
-        e.preventDefault();
+        if (!onControl) e.preventDefault();
         setSelected((s) => Math.max(s - 1, 0));
       } else if (e.key === "Enter") {
+        if (onControl) return;
         e.preventDefault();
         const item = allResults[selected];
         if (!item) return;
@@ -137,10 +162,14 @@ export default function CommandPalette({ open, onClose, onSelectCategory, onSele
 
           {/* Dialog */}
           <motion.div
+            ref={dialogRef}
             initial={{ scale: 0.96, opacity: 0, y: -8 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.96, opacity: 0, y: -8 }}
             transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Command palette"
             style={{
               position: "fixed",
               top: "18%",
@@ -315,8 +344,8 @@ export default function CommandPalette({ open, onClose, onSelectCategory, onSele
                       {!isCat && item.oss && (
                         <span style={{
                           fontSize: 9, fontFamily: "monospace",
-                          background: "rgba(0,255,136,0.1)", color: "#00ff88",
-                          border: "1px solid rgba(0,255,136,0.2)",
+                          background: "var(--badge-oss-bg)", color: "var(--badge-oss-color)",
+                          border: "1px solid var(--badge-oss-border)",
                           borderRadius: 3, padding: "1px 6px",
                         }}>
                           OSS

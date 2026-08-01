@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 const TOOL_CATEGORIES = [
   "Developer Tools",
@@ -33,6 +34,7 @@ const inputStyle = {
 };
 
 export default function ToolSubmitForm({ open, onClose, accent = "#00f0ff" }) {
+  const panelRef = useRef(null);
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [category, setCategory] = useState("");
@@ -42,6 +44,16 @@ export default function ToolSubmitForm({ open, onClose, accent = "#00f0ff" }) {
   const [oss, setOss] = useState(false);
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("idle"); // idle | submitting | success | error
+
+  useFocusTrap({ open, containerRef: panelRef, restoreFocus: true });
+
+  // Dismiss on Escape
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose]);
 
   const resetForm = () => {
     setName(""); setUrl(""); setCategory(""); setDescription("");
@@ -127,10 +139,14 @@ export default function ToolSubmitForm({ open, onClose, accent = "#00f0ff" }) {
             }}
           >
           <motion.div
+            ref={panelRef}
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Submit a tool"
             style={{
               pointerEvents: "auto",
               width: 380, maxWidth: "100%", maxHeight: "85vh",
@@ -171,7 +187,7 @@ export default function ToolSubmitForm({ open, onClose, accent = "#00f0ff" }) {
               {status === "success" ? (
                 <div style={{ padding: "40px 16px", textAlign: "center" }}>
                   <div style={{ fontSize: 28, marginBottom: 10 }}>✓</div>
-                  <span style={{ fontFamily: "monospace", fontSize: 12, color: "#00ff88" }}>
+                  <span style={{ fontFamily: "monospace", fontSize: 12, color: "var(--success-color)" }}>
                     Tool submitted for review!
                   </span>
                   <p style={{ fontFamily: "monospace", fontSize: 10, color: "var(--text-faint)", marginTop: 6 }}>

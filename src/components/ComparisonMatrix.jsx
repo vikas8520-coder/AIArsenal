@@ -1,5 +1,7 @@
 "use client";
+import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import { TOOLS } from "../data/tools";
 import { getCategoryById } from "../data/categories";
 
@@ -15,7 +17,18 @@ const ROWS = [
 ];
 
 export default function ComparisonMatrix({ open, onClose, compareIds, accent = "#00f0ff" }) {
+  const panelRef = useRef(null);
   const tools = compareIds.map((id) => TOOLS.find((t) => t.id === id)).filter(Boolean);
+
+  useFocusTrap({ open, containerRef: panelRef, restoreFocus: true });
+
+  // Dismiss on Escape
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose]);
 
   return (
     <AnimatePresence>
@@ -46,10 +59,14 @@ export default function ComparisonMatrix({ open, onClose, compareIds, accent = "
             }}
           >
           <motion.div
+            ref={panelRef}
             initial={{ opacity: 0, y: 30, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.95 }}
             transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Compare tools"
             style={{
               pointerEvents: "auto",
               width: Math.min(tools.length * 220 + 140, 960),

@@ -3,7 +3,7 @@
  * Uses all-MiniLM-L6-v2 (384 dimensions, ~23MB ONNX).
  *
  * Run: node scripts/generate-embeddings.mjs
- * Output: src/data/tool-embeddings.json
+ * Output: public/tool-embeddings.json
  */
 
 import { pipeline } from "@huggingface/transformers";
@@ -64,8 +64,8 @@ for (let i = 0; i < TOOLS.length; i++) {
 }
 
 // ── Save output ─────────────────────────────────────────────────────────────
-const outputPath = join(ROOT, "src/data/tool-embeddings.json");
+const outputPath = join(ROOT, "public/tool-embeddings.json");
 writeFileSync(outputPath, JSON.stringify(embeddings));
 
 const sizeKB = (Buffer.byteLength(JSON.stringify(embeddings)) / 1024).toFixed(1);
-console.log(`\nDone! Saved ${Object.keys(embeddings).length} embeddings to src/data/tool-embeddings.json (${sizeKB}KB)`);
+console.log(`\nDone! Saved ${Object.keys(embeddings).length} embeddings to public/tool-embeddings.json (${sizeKB}KB)`);

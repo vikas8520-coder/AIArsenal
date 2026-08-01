@@ -1,6 +1,7 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import { PAID_TOOLS, BUDGET_BLUEPRINTS, COST_STRATEGIES } from "../data/paid-tools";
 import { TOOLS } from "../data/tools";
 
@@ -45,7 +46,18 @@ function buildOptimalStack(budget) {
 }
 
 export default function CostCalculator({ open, onClose, accent = "#00f0ff" }) {
+  const panelRef = useRef(null);
   const [budget, setBudget] = useState(50);
+
+  useFocusTrap({ open, containerRef: panelRef, restoreFocus: true });
+
+  // Dismiss on Escape
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose]);
 
   const tier = getBlueprintTier(budget);
   const blueprint = BUDGET_BLUEPRINTS[tier];
@@ -74,10 +86,14 @@ export default function CostCalculator({ open, onClose, accent = "#00f0ff" }) {
           />
 
           <motion.div
+            ref={panelRef}
             initial={{ opacity: 0, x: 300 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 300 }}
             transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Budget calculator"
             style={{
               position: "fixed", top: 0, right: 0, bottom: 0,
               zIndex: 61,
@@ -234,20 +250,20 @@ export default function CostCalculator({ open, onClose, accent = "#00f0ff" }) {
                     ))}
                     {freeAlts.length > 0 && (
                       <div style={{ marginTop: 8 }}>
-                        <span style={{ fontFamily: "monospace", fontSize: 8, color: "#00ff88", letterSpacing: 1 }}>
+                        <span style={{ fontFamily: "monospace", fontSize: 8, color: "var(--success-color)", letterSpacing: 1 }}>
                           + FREE ALTERNATIVES
                         </span>
                         {freeAlts.map((tool) => (
                           <div key={tool.id} style={{
                             display: "flex", justifyContent: "space-between",
                             padding: "6px 10px", marginTop: 4,
-                            background: "rgba(0,255,136,0.04)", border: "1px solid rgba(0,255,136,0.12)",
+                            background: "var(--badge-oss-bg)", border: "1px solid var(--badge-oss-border)",
                             borderRadius: 7,
                           }}>
                             <span style={{ fontFamily: "monospace", fontSize: 10, color: "var(--text-secondary)" }}>
                               {tool.name}
                             </span>
-                            <span style={{ fontFamily: "monospace", fontSize: 9, color: "#00ff88" }}>
+                            <span style={{ fontFamily: "monospace", fontSize: 9, color: "var(--success-color)" }}>
                               FREE
                             </span>
                           </div>
@@ -261,10 +277,10 @@ export default function CostCalculator({ open, onClose, accent = "#00f0ff" }) {
               {/* Tradeoffs */}
               <div style={{
                 padding: "10px 12px", marginBottom: 16,
-                background: "rgba(234,179,8,0.06)", border: "1px solid rgba(234,179,8,0.15)",
+                background: "var(--badge-sponsored-bg)", border: "1px solid var(--badge-sponsored-border)",
                 borderRadius: 8,
               }}>
-                <span style={{ fontFamily: "monospace", fontSize: 8, color: "#eab308", letterSpacing: 1 }}>
+                <span style={{ fontFamily: "monospace", fontSize: 8, color: "var(--badge-sponsored-color)", letterSpacing: 1 }}>
                   TRADEOFFS
                 </span>
                 <p style={{ fontFamily: "monospace", fontSize: 10, color: "var(--text-muted)", lineHeight: 1.5, margin: "4px 0 0" }}>
@@ -290,7 +306,7 @@ export default function CostCalculator({ open, onClose, accent = "#00f0ff" }) {
                         </span>
                         <span style={{
                           fontSize: 9, padding: "2px 6px",
-                          background: "rgba(0,255,136,0.1)", color: "#00ff88",
+                          background: "var(--badge-oss-bg)", color: "var(--success-color)",
                           borderRadius: 3, fontFamily: "monospace", fontWeight: 600,
                         }}>
                           {strategy.savingsEstimate}

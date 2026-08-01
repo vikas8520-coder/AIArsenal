@@ -53,7 +53,7 @@ export default function useBookmarks() {
           `| ${t.name} | ${t.category} | ${t.free} | [${t.url}](https://${t.url}) |`
       ),
       "",
-      `*Exported from [AIArsenal](https://aiarsenal.vercel.app) — ${new Date().toLocaleDateString()}*`,
+      `*Exported from [AIArsenal](https://ai-arsenal-nu.vercel.app) — ${new Date().toLocaleDateString()}*`,
     ];
     return lines.join("\n");
   }, [bookmarks]);

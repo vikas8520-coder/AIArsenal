@@ -3,8 +3,13 @@ import { motion } from "framer-motion";
 import { TOOLS } from "../data/tools";
 import { CATEGORIES } from "../data/categories";
 import CategoryEmblem from "./CategoryEmblem";
+import useTheme from "@/src/hooks/useTheme";
+import { adjustColorForTheme } from "@/src/lib/colors";
 
 export default function CategoryHero({ cat, filteredCount }) {
+  const theme = useTheme();
+  const displayColor = adjustColorForTheme(cat.color, theme);
+  const categoriesColor = adjustColorForTheme("#b388ff", theme);
   const isAll = cat.id === "all";
   const ossCount = isAll
     ? TOOLS.filter((t) => t.oss).length
@@ -22,8 +27,8 @@ export default function CategoryHero({ cat, filteredCount }) {
       style={{
         marginBottom: 24,
         padding: "20px 22px",
-        background: `linear-gradient(135deg, ${cat.color}08 0%, transparent 60%)`,
-        border: `1px solid ${cat.color}18`,
+        background: `linear-gradient(135deg, ${displayColor}08 0%, transparent 60%)`,
+        border: `1px solid ${displayColor}18`,
         borderRadius: 16,
         position: "relative",
         overflow: "hidden",
@@ -33,14 +38,14 @@ export default function CategoryHero({ cat, filteredCount }) {
       <div style={{
         position: "absolute", top: -30, right: -30,
         width: 120, height: 120, borderRadius: "50%",
-        background: cat.color, opacity: 0.04, filter: "blur(30px)",
+        background: displayColor, opacity: 0.04, filter: "blur(30px)",
         pointerEvents: "none",
       }} />
 
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-            <CategoryEmblem category={cat} size={28} accent={cat.color} />
+            <CategoryEmblem category={cat} size={28} accent={displayColor} />
             <h1 style={{ margin: 0, fontFamily: "monospace", fontWeight: 700, fontSize: 17, color: "var(--text-strong)" }}>
               {cat.label}
             </h1>
@@ -52,9 +57,9 @@ export default function CategoryHero({ cat, filteredCount }) {
 
         {/* Stats */}
         <div style={{ display: "flex", gap: 12, flexShrink: 0 }}>
-          <Stat label="TOTAL" value={filteredCount} color={cat.color} />
-          <Stat label="OSS" value={ossCount} color="#00ff88" />
-          {isAll && <Stat label="CATEGORIES" value={CATEGORIES.length} color="#b388ff" />}
+          <Stat label="TOTAL" value={filteredCount} color={displayColor} />
+          <Stat label="OSS" value={ossCount} color="var(--badge-oss-color)" />
+          {isAll && <Stat label="CATEGORIES" value={CATEGORIES.length} color={categoriesColor} />}
         </div>
       </div>
 
@@ -62,8 +67,8 @@ export default function CategoryHero({ cat, filteredCount }) {
       <div style={{ marginTop: 12, display: "flex", gap: 6, alignItems: "center" }}>
         <span style={{
           fontSize: 9, fontFamily: "monospace", letterSpacing: 1,
-          background: `${cat.color}15`, color: cat.color,
-          border: `1px solid ${cat.color}25`,
+          background: `${displayColor}15`, color: displayColor,
+          border: `1px solid ${displayColor}25`,
           borderRadius: 4, padding: "2px 8px",
         }}>
           {cat.mood}

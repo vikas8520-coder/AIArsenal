@@ -7,6 +7,8 @@ import { searchTools } from "../hooks/useSearch";
 import { useSemanticSearch, isSemanticQuery } from "../hooks/useSemanticSearch";
 import { CATEGORIES, getCategoryById } from "../data/categories";
 import { getAllCompareSlugs, getCompareSlug } from "../lib/compare";
+import useTheme from "@/src/hooks/useTheme";
+import { adjustColorForTheme } from "@/src/lib/colors";
 
 const COMPARE_SLUGS = new Set(getAllCompareSlugs());
 
@@ -285,8 +287,9 @@ function ScoreBadge({ score }) {
 }
 
 function ToolResultCard({ tool, reason, accent, onClick, score }) {
+  const theme = useTheme();
   const cat = getCategoryById(tool.category);
-  const color = cat?.color || accent;
+  const color = adjustColorForTheme(cat?.color || accent, theme);
   return (
     <motion.div
       initial={{ opacity: 0, y: 4 }}
@@ -337,6 +340,7 @@ function ToolResultCard({ tool, reason, accent, onClick, score }) {
 // ── Comparison Card (#4) ─────────────────────────────────────────────────────
 
 function ComparisonCard({ toolA, toolB, accent }) {
+  const theme = useTheme();
   const rows = [
     { label: "Free Tier", a: toolA.free, b: toolB.free },
     { label: "Category", a: toolA.subcategory || toolA.category, b: toolB.subcategory || toolB.category },
@@ -347,6 +351,8 @@ function ComparisonCard({ toolA, toolB, accent }) {
 
   const catA = getCategoryById(toolA.category);
   const catB = getCategoryById(toolB.category);
+  const colorA = adjustColorForTheme(catA?.color || accent, theme);
+  const colorB = adjustColorForTheme(catB?.color || accent, theme);
 
   const compareSlug = getCompareSlug(toolA, toolB);
   const hasComparePage = COMPARE_SLUGS.has(compareSlug);
@@ -361,7 +367,7 @@ function ComparisonCard({ toolA, toolB, accent }) {
       <div style={{
         display: "flex", alignItems: "center", gap: 8, marginBottom: 10,
       }}>
-        <span style={{ fontSize: 9, fontFamily: "monospace", letterSpacing: 1.5, color: "#a855f7" }}>
+        <span style={{ fontSize: 9, fontFamily: "monospace", letterSpacing: 1.5, color: adjustColorForTheme("#a855f7", theme) }}>
           COMPARISON
         </span>
         <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
@@ -372,17 +378,17 @@ function ComparisonCard({ toolA, toolB, accent }) {
         <div />
         <div style={{
           fontFamily: "monospace", fontWeight: 700, fontSize: 13,
-          color: catA?.color || accent, padding: "6px 10px",
-          background: `${catA?.color || accent}08`, borderRadius: "8px 0 0 0",
-          borderBottom: `2px solid ${catA?.color || accent}30`,
+          color: colorA, padding: "6px 10px",
+          background: `${colorA}08`, borderRadius: "8px 0 0 0",
+          borderBottom: `2px solid ${colorA}30`,
         }}>
           {toolA.name}
         </div>
         <div style={{
           fontFamily: "monospace", fontWeight: 700, fontSize: 13,
-          color: catB?.color || accent, padding: "6px 10px",
-          background: `${catB?.color || accent}08`, borderRadius: "0 8px 0 0",
-          borderBottom: `2px solid ${catB?.color || accent}30`,
+          color: colorB, padding: "6px 10px",
+          background: `${colorB}08`, borderRadius: "0 8px 0 0",
+          borderBottom: `2px solid ${colorB}30`,
         }}>
           {toolB.name}
         </div>
@@ -1064,11 +1070,11 @@ export default function SmartSearch({
                     {aiResults.plan.stack_notes}
                   </p>
                   {aiResults.plan.budget_tip && (
-                    <p style={{ fontSize: 10, color: "#eab308", margin: "0 0 4px", fontFamily: "monospace" }}>
+                    <p style={{ fontSize: 10, color: "var(--badge-sponsored-color)", margin: "0 0 4px", fontFamily: "monospace" }}>
                       {aiResults.plan.budget_tip}
                     </p>
                   )}
-                  <p style={{ fontFamily: "monospace", fontSize: 10, color: "#76ff03", margin: 0 }}>
+                  <p style={{ fontFamily: "monospace", fontSize: 10, color: "var(--income-color)", margin: 0 }}>
                     {aiResults.plan.estimated_monthly_cost}
                   </p>
                 </div>

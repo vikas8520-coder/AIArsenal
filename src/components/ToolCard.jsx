@@ -7,6 +7,8 @@ import { getAttributes } from "../data/tool-attributes";
 import { findSimilarTools } from "../utils/similarTools";
 import { readProfile, trackToolView } from "../lib/visitorIntel";
 import { getOutboundHref } from "../lib/outbound";
+import useTheme from "@/src/hooks/useTheme";
+import { adjustColorForTheme } from "@/src/lib/colors";
 
 export function SkeletonCard() {
   return (
@@ -43,16 +45,44 @@ export default function ToolCard({
   isComparing, onToggleCompare, compareCount = 0,
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [similarTools, setSimilarTools] = useState([]);
+  const [similarLoading, setSimilarLoading] = useState(false);
+  const [quickCopied, setQuickCopied] = useState(false);
   const cardRef = useRef(null);
-  const cat = getCategoryById(tool.category);
-  const accent = cat?.color || "#00f0ff";
+  const theme = useTheme();
 
-  const similarTools = useMemo(() => {
-    if (!expanded) return [];
-    return findSimilarTools(tool.id, 5).map((s) => {
-      const t = TOOLS.find((t) => t.id === s.id);
-      return t ? { ...t, score: s.score } : null;
-    }).filter(Boolean);
+  const copyQuickStart = async () => {
+    if (!tool.quickStart) return;
+    try {
+      await navigator.clipboard.writeText(tool.quickStart);
+      setQuickCopied(true);
+      setTimeout(() => setQuickCopied(false), 1200);
+    } catch {}
+  };
+  const cat = getCategoryById(tool.category);
+  const accent = adjustColorForTheme(cat?.color || "#00f0ff", theme);
+
+  useEffect(() => {
+    if (!expanded) {
+      setSimilarTools([]);
+      setSimilarLoading(false);
+      return;
+    }
+    setSimilarLoading(true);
+    let cancelled = false;
+    findSimilarTools(tool.id, 5).then((results) => {
+      if (cancelled) return;
+      setSimilarLoading(false);
+      setSimilarTools(
+        results
+          .map((s) => {
+            const t = TOOLS.find((t) => t.id === s.id);
+            return t ? { ...t, score: s.score } : null;
+          })
+          .filter(Boolean)
+      );
+    });
+    return () => { cancelled = true; };
   }, [expanded, tool.id]);
 
   const attrs = getAttributes(tool.id);
@@ -171,9 +201,9 @@ export default function ToolCard({
               {isNew && (
                 <span style={{
                   fontSize: 8, padding: "1.5px 5px",
-                  background: "rgba(0,240,255,0.12)", color: "#00f0ff",
+                  background: "var(--badge-new-bg)", color: "var(--badge-new-color)",
                   borderRadius: 3, fontFamily: "monospace", fontWeight: 700,
-                  border: "1px solid rgba(0,240,255,0.25)",
+                  border: "1px solid var(--badge-new-border)",
                   animation: "pulse 2s ease-in-out infinite",
                 }}>
                   NEW
@@ -182,9 +212,9 @@ export default function ToolCard({
               {tool.sponsored && (
                 <span style={{
                   fontSize: 8, padding: "1.5px 5px",
-                  background: "rgba(234,179,8,0.1)", color: "#eab308",
+                  background: "var(--badge-sponsored-bg)", color: "var(--badge-sponsored-color)",
                   borderRadius: 3, fontFamily: "monospace", fontWeight: 700,
-                  border: "1px solid rgba(234,179,8,0.2)",
+                  border: "1px solid var(--badge-sponsored-border)",
                   display: "inline-block",
                 }}>
                   {tool.sponsorLabel || "Sponsored"}
@@ -210,9 +240,9 @@ export default function ToolCard({
                   <span className="oss-ring" style={{ position: "absolute" }} />
                   <span style={{
                     fontSize: 8, padding: "1.5px 5px",
-                    background: "rgba(0,255,136,0.1)", color: "#00ff88",
+                    background: "var(--badge-oss-bg)", color: "var(--badge-oss-color)",
                     borderRadius: 3, fontFamily: "monospace", fontWeight: 700,
-                    border: "1px solid rgba(0,255,136,0.2)",
+                    border: "1px solid var(--badge-oss-border)",
                     display: "inline-block",
                   }}>
                     OSS
@@ -294,9 +324,25 @@ export default function ToolCard({
                 {/* Quick Start */}
                 {tool.quickStart && (
                   <div style={{ marginBottom: 10 }}>
-                    <span style={{ color: accent, fontSize: 8.5, fontFamily: "monospace", letterSpacing: 1.5 }}>
-                      QUICK START
-                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "space-between" }}>
+                      <span style={{ color: accent, fontSize: 8.5, fontFamily: "monospace", letterSpacing: 1.5 }}>
+                        QUICK START
+                      </span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); copyQuickStart(); }}
+                        title="Copy quick start"
+                        style={{
+                          fontSize: 8, fontFamily: "monospace",
+                          background: "var(--surface-2)", color: quickCopied ? "var(--success-color)" : "var(--text-muted)",
+                          border: "1px solid var(--border-bright)", borderRadius: 4,
+                          padding: "2px 6px", cursor: "pointer", transition: "all 0.15s",
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.color = quickCopied ? "var(--success-color)" : accent; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = quickCopied ? "var(--success-color)" : "var(--text-muted)"; }}
+                      >
+                        {quickCopied ? "✓ copied" : "copy"}
+                      </button>
+                    </div>
                     <p style={{
                       fontSize: 11, color: "var(--text-default)", margin: "4px 0 0",
                       lineHeight: 1.55, fontFamily: "monospace",
@@ -385,7 +431,12 @@ export default function ToolCard({
                 )}
 
                 {/* Similar Tools */}
-                {similarTools.length > 0 && (
+                {similarLoading && (
+                  <div style={{ marginTop: 12, color: "var(--text-faint)", fontSize: 9, fontFamily: "monospace" }}>
+                    Finding similar…
+                  </div>
+                )}
+                {!similarLoading && similarTools.length > 0 && (
                   <div style={{ marginTop: 12 }}>
                     <span style={{ color: "var(--text-faint)", fontSize: 8.5, fontFamily: "monospace", letterSpacing: 1.5 }}>
                       SIMILAR TOOLS
@@ -393,7 +444,7 @@ export default function ToolCard({
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
                       {similarTools.map((st) => {
                         const stCat = getCategoryById(st.category);
-                        const stAccent = stCat?.color || "#00f0ff";
+                        const stAccent = adjustColorForTheme(stCat?.color || "#00f0ff", theme);
                         return (
                           <span
                             key={st.id}

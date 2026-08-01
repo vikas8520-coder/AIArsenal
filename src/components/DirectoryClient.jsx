@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "framer-motion";
 import { TOOLS } from "@/src/data/tools";
 import { searchTools } from "@/src/hooks/useSearch";
@@ -11,20 +12,24 @@ import AmbientBackground from "@/src/components/AmbientBackground";
 import Sidebar from "@/src/components/Sidebar";
 import Header from "@/src/components/Header";
 import ToolCard, { SkeletonCard } from "@/src/components/ToolCard";
-import CommandPalette from "@/src/components/CommandPalette";
 import CategoryHero from "@/src/components/CategoryHero";
 import Spotlight from "@/src/components/Spotlight";
 import EmptyState from "@/src/components/EmptyState";
 import EmailCapture from "@/src/components/EmailCapture";
 import FeedbackWidget from "@/src/components/FeedbackWidget";
-import ToolSubmitForm from "@/src/components/ToolSubmitForm";
-import MyStack from "@/src/components/MyStack";
-import ComparisonMatrix from "@/src/components/ComparisonMatrix";
-import SharePanel from "@/src/components/SharePanel";
-import CostCalculator from "@/src/components/CostCalculator";
 import LandingHero from "@/src/components/LandingHero";
 import WelcomeBackBanner from "@/src/components/WelcomeBackBanner";
 import KineticHero from "@/src/components/KineticHero";
+import Footer from "@/src/components/Footer";
+import { adjustColorForTheme } from "@/src/lib/colors";
+
+// Overlays are only loaded when first opened
+const CommandPalette = dynamic(() => import("@/src/components/CommandPalette"), { ssr: false });
+const ToolSubmitForm = dynamic(() => import("@/src/components/ToolSubmitForm"), { ssr: false });
+const MyStack = dynamic(() => import("@/src/components/MyStack"), { ssr: false });
+const ComparisonMatrix = dynamic(() => import("@/src/components/ComparisonMatrix"), { ssr: false });
+const SharePanel = dynamic(() => import("@/src/components/SharePanel"), { ssr: false });
+const CostCalculator = dynamic(() => import("@/src/components/CostCalculator"), { ssr: false });
 
 // Group tools by subcategory, sponsored tools float to top
 function groupBySubcategory(tools) {
@@ -39,6 +44,15 @@ function groupBySubcategory(tools) {
   return map;
 }
 
+// Mount once on first open, keep mounted so internal AnimatePresence exit animations run
+function useLazyMount(isOpen) {
+  const [hasOpened, setHasOpened] = useState(false);
+  useEffect(() => {
+    if (isOpen) setHasOpened(true);
+  }, [isOpen]);
+  return hasOpened;
+}
+
 export default function DirectoryClient() {
   const [search, setSearch] = useState("");
   const [activeCat, setActiveCat] = useState("all");
@@ -49,6 +63,7 @@ export default function DirectoryClient() {
   const [submitOpen, setSubmitOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [scrollToToolId, setScrollToToolId] = useState(null);
+  const mainRef = useRef(null);
   const [theme, setTheme] = useState(() => {
     try { return localStorage.getItem("nexus-theme") || "dark"; } catch { return "dark"; }
   });
@@ -59,6 +74,14 @@ export default function DirectoryClient() {
   const [compareOpen, setCompareOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [calcOpen, setCalcOpen] = useState(false);
+
+  // Lazy-mount flags: load overlay chunks on first open but keep mounted for exit animations
+  const hasOpenedSubmit = useLazyMount(submitOpen);
+  const hasOpenedPalette = useLazyMount(paletteOpen);
+  const hasOpenedStack = useLazyMount(stackOpen);
+  const hasOpenedCompare = useLazyMount(compareOpen);
+  const hasOpenedShare = useLazyMount(shareOpen);
+  const hasOpenedCalc = useLazyMount(calcOpen);
 
   // Bookmarks hook
   const { bookmarks, toggle: toggleBookmark, isBookmarked, count: bookmarkCount, bookmarkedTools, exportMarkdown, clearAll: clearBookmarks } = useBookmarks();
@@ -86,8 +109,9 @@ export default function DirectoryClient() {
   // Update CSS accent variable when category changes
   useEffect(() => {
     const root = document.documentElement;
-    root.style.setProperty("--accent", activeCatObj.color);
-    const hex = activeCatObj.color.replace("#", "");
+    const accent = adjustColorForTheme(activeCatObj.color, theme);
+    root.style.setProperty("--accent", accent);
+    const hex = accent.replace("#", "");
     const r = parseInt(hex.slice(0, 2), 16);
     const g = parseInt(hex.slice(2, 4), 16);
     const b = parseInt(hex.slice(4, 6), 16);
@@ -96,59 +120,98 @@ export default function DirectoryClient() {
     root.style.setProperty("--accent-border", `rgba(${r},${g},${b},0.25)`);
     root.style.setProperty("--orb1", activeCatObj.orb1);
     root.style.setProperty("--orb2", activeCatObj.orb2);
-  }, [activeCatObj]);
+  }, [activeCatObj, theme]);
 
-  // ⌘K global shortcut
+  // ⌘K global shortcut and OSS toggle
   useEffect(() => {
     const handler = (e) => {
+      const anyOverlayOpen = submitOpen || paletteOpen || stackOpen || compareOpen || shareOpen || calcOpen;
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setPaletteOpen((v) => !v);
+        return;
       }
-      if (e.key === "o" && e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA") {
+      if (
+        e.key === "o" &&
+        !e.metaKey && !e.ctrlKey && !e.altKey &&
+        !anyOverlayOpen &&
+        e.target.tagName !== "INPUT" &&
+        e.target.tagName !== "TEXTAREA" &&
+        !e.target.isContentEditable
+      ) {
         setFilterOSS((v) => !v);
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [submitOpen, paletteOpen, stackOpen, compareOpen, shareOpen, calcOpen]);
+
+  // Lock body scroll while any overlay is open
+  useEffect(() => {
+    const anyOverlayOpen = submitOpen || paletteOpen || stackOpen || compareOpen || shareOpen || calcOpen;
+    if (anyOverlayOpen) {
+      const original = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = original; };
+    }
+  }, [submitOpen, paletteOpen, stackOpen, compareOpen, shareOpen, calcOpen]);
 
   // Scroll to tool after category switch renders
   useEffect(() => {
     if (!scrollToToolId) return;
-    let cancelled = false;
-    const tryScroll = () => {
+    let highlightTimer = null;
+    let pollTimer = null;
+    let attempts = 0;
+
+    // Poll until the tool card exists AND its framer-motion enter animation
+    // has settled (opacity === 1, no transform). Stagger delay is i*0.025s
+    // so cards far down the list take up to ~1.5s to settle.
+    const poll = () => {
+      attempts++;
       const el = document.getElementById(`tool-${scrollToToolId}`);
-      if (!el) return false;
-      const main = el.closest("main");
+      if (!el) {
+        if (attempts < 80) pollTimer = setTimeout(poll, 50);
+        return;
+      }
+
+      // Check if the parent motion.div has settled (opacity animation complete)
+      const motionParent = el.parentElement;
+      const style = motionParent ? getComputedStyle(motionParent) : null;
+      const settled = !style || parseFloat(style.opacity) >= 0.99;
+
+      if (!settled) {
+        if (attempts < 80) pollTimer = setTimeout(poll, 50);
+        return;
+      }
+
+      // Element found and settled — scroll and highlight
+      const main = mainRef.current;
       if (main) {
-        main.scrollTop = 0;
-        requestAnimationFrame(() => {
-          if (cancelled) return;
-          const mainRect = main.getBoundingClientRect();
-          const elRect = el.getBoundingClientRect();
-          const offset = elRect.top - mainRect.top + main.scrollTop - (mainRect.height / 2) + (elRect.height / 2);
-          main.scrollTo({ top: Math.max(0, offset), behavior: "smooth" });
-        });
+        const mainRect = main.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        const offset = elRect.top - mainRect.top + main.scrollTop - (mainRect.height / 2) + (elRect.height / 2);
+        main.scrollTo({ top: Math.max(0, offset), behavior: "smooth" });
       } else {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
       }
-      el.style.boxShadow = "0 0 0 2px #00f0ff";
-      el.style.transition = "box-shadow 0.3s";
-      setTimeout(() => { el.style.boxShadow = ""; }, 2500);
-      return true;
+
+      // Highlight with cyan ring — use outline instead of boxShadow to avoid
+      // conflicting with the card's inline boxShadow style
+      el.style.outline = "2px solid #00f0ff";
+      el.style.outlineOffset = "-2px";
+      highlightTimer = setTimeout(() => {
+        el.style.outline = "";
+        el.style.outlineOffset = "";
+      }, 2500);
     };
 
-    let attempts = 0;
-    const poll = setInterval(() => {
-      attempts++;
-      if (tryScroll() || attempts > 30) {
-        clearInterval(poll);
-        setScrollToToolId(null);
-      }
-    }, 50);
+    // Start polling after loading state clears (180ms)
+    pollTimer = setTimeout(poll, 200);
 
-    return () => { cancelled = true; clearInterval(poll); };
+    return () => {
+      clearTimeout(pollTimer);
+      if (highlightTimer) clearTimeout(highlightTimer);
+    };
   }, [scrollToToolId]);
 
   // Filter + sort
@@ -227,9 +290,14 @@ export default function DirectoryClient() {
 
   const showSpotlight = activeCat === "all" && !search && !filterOSS;
   const hasResults = filtered.length > 0;
+  const activeColor = adjustColorForTheme(activeCatObj.color, theme);
+  const activeDisplayCat = useMemo(
+    () => ({ ...activeCatObj, color: activeColor }),
+    [activeCatObj, activeColor]
+  );
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)", position: "relative", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
+    <div style={{ display: "flex", height: "100vh", background: "var(--bg)", position: "relative", width: "100%", maxWidth: "100vw", overflow: "hidden" }}>
       {/* Landing Hero (first visit) */}
       <LandingHero accent={activeCatObj.color} onExplore={() => {}} />
 
@@ -259,7 +327,7 @@ export default function DirectoryClient() {
           sortBy={sortBy}
           onSort={setSortBy}
           onToggleSubmit={() => setSubmitOpen(true)}
-          accent={activeCatObj.color}
+          accent={activeColor}
           onOpenPalette={() => setPaletteOpen(true)}
           resultCount={filtered.length}
           theme={theme}
@@ -285,16 +353,17 @@ export default function DirectoryClient() {
 
         {/* Scrollable content */}
         <main
+          ref={mainRef}
           className="main-content-mobile"
           style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "20px 20px 40px", minWidth: 0, width: "100%", maxWidth: "100%" }}
           aria-label="Tool library"
         >
           {/* Kinetic landing hero (All Tools view only) */}
-          {showSpotlight && <KineticHero accent={activeCatObj.color} />}
+          {showSpotlight && <KineticHero accent={activeColor} />}
 
           {/* Category-specific hero strip (every category EXCEPT All Tools) */}
           {!showSpotlight && (
-            <CategoryHero cat={activeCatObj} filteredCount={filtered.length} />
+            <CategoryHero cat={activeDisplayCat} filteredCount={filtered.length} />
           )}
 
           {/* Personalized welcome-back banner (All Tools only) */}
@@ -309,7 +378,7 @@ export default function DirectoryClient() {
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                 <span style={{
                   fontFamily: "monospace", fontSize: 9,
-                  color: "#00f0ff", letterSpacing: 1.5, fontWeight: 600,
+                  color: "var(--brand-color)", letterSpacing: 1.5, fontWeight: 600,
                 }}>
                   RECENTLY ADDED
                 </span>
@@ -333,7 +402,7 @@ export default function DirectoryClient() {
                         cursor: "pointer",
                       }}
                       onClick={() => {
-                        handleCategorySelect(tool.category, true);
+                        handleCategorySelect(tool.category);
                         setScrollToToolId(tool.id);
                       }}
                     >
@@ -347,7 +416,7 @@ export default function DirectoryClient() {
                         </span>
                         <span style={{
                           fontSize: 7, padding: "1px 4px",
-                          background: "rgba(0,240,255,0.12)", color: "#00f0ff",
+                          background: "var(--badge-new-bg)", color: "var(--badge-new-color)",
                           borderRadius: 2, fontFamily: "monospace", fontWeight: 700,
                           flexShrink: 0,
                         }}>
@@ -365,8 +434,8 @@ export default function DirectoryClient() {
                       <span style={{
                         fontSize: 8, marginTop: 5, display: "inline-block",
                         padding: "1px 5px",
-                        background: `${cat?.color || "#00f0ff"}10`,
-                        color: cat?.color || "#00f0ff",
+                        background: `${adjustColorForTheme(cat?.color || "#00f0ff", theme)}10`,
+                        color: adjustColorForTheme(cat?.color || "#00f0ff", theme),
                         borderRadius: 3, fontFamily: "monospace",
                       }}>
                         {tool.category}
@@ -379,7 +448,7 @@ export default function DirectoryClient() {
           )}
 
           {/* Email capture (homepage only) */}
-          {showSpotlight && <EmailCapture accent={activeCatObj.color} />}
+          {showSpotlight && <EmailCapture accent={activeColor} />}
 
           {/* Loading skeletons */}
           {loading && (
@@ -393,7 +462,7 @@ export default function DirectoryClient() {
             <EmptyState
               query={search}
               onClear={() => setSearch("")}
-              accent={activeCatObj.color}
+              accent={activeColor}
             />
           )}
 
@@ -419,8 +488,8 @@ export default function DirectoryClient() {
                       </span>
                       <span style={{
                         fontSize: 9, fontFamily: "monospace",
-                        background: `${activeCatObj.color}10`,
-                        color: activeCatObj.color, border: `1px solid ${activeCatObj.color}20`,
+                        background: `${activeColor}10`,
+                        color: activeColor, border: `1px solid ${activeColor}20`,
                         borderRadius: 3, padding: "0px 5px",
                       }}>
                         {tools.length}
@@ -454,6 +523,9 @@ export default function DirectoryClient() {
               </motion.div>
             </AnimatePresence>
           )}
+
+          {/* Footer inside the scrollable main area on the homepage */}
+          <Footer />
         </main>
       </div>
 
@@ -485,9 +557,9 @@ export default function DirectoryClient() {
               disabled={compareSet.size < 2}
               style={{
                 fontFamily: "monospace", fontSize: 10,
-                background: compareSet.size >= 2 ? `${activeCatObj.color}20` : "var(--surface-1)",
-                color: compareSet.size >= 2 ? activeCatObj.color : "var(--text-faint)",
-                border: `1px solid ${compareSet.size >= 2 ? `${activeCatObj.color}40` : "var(--border)"}`,
+                background: compareSet.size >= 2 ? `${activeColor}20` : "var(--surface-1)",
+                color: compareSet.size >= 2 ? activeColor : "var(--text-faint)",
+                border: `1px solid ${compareSet.size >= 2 ? `${activeColor}40` : "var(--border)"}`,
                 borderRadius: 7, padding: "6px 14px", cursor: compareSet.size >= 2 ? "pointer" : "not-allowed",
                 opacity: compareSet.size >= 2 ? 1 : 0.5,
               }}
@@ -510,58 +582,70 @@ export default function DirectoryClient() {
       </AnimatePresence>
 
       {/* Feedback Widget */}
-      <FeedbackWidget accent={activeCatObj.color} />
+      <FeedbackWidget accent={activeColor} />
 
       {/* Tool Submit Form */}
-      <ToolSubmitForm
-        open={submitOpen}
-        onClose={() => setSubmitOpen(false)}
-        accent={activeCatObj.color}
-      />
+      {hasOpenedSubmit && (
+        <ToolSubmitForm
+          open={submitOpen}
+          onClose={() => setSubmitOpen(false)}
+          accent={activeColor}
+        />
+      )}
 
       {/* Command Palette */}
-      <CommandPalette
-        open={paletteOpen}
-        onClose={() => setPaletteOpen(false)}
-        onSelectCategory={handleCategorySelect}
-        onSelectTool={(tool) => {
-          handleCategorySelect(tool.category);
-        }}
-      />
+      {hasOpenedPalette && (
+        <CommandPalette
+          open={paletteOpen}
+          onClose={() => setPaletteOpen(false)}
+          onSelectCategory={handleCategorySelect}
+          onSelectTool={(tool) => {
+            handleCategorySelect(tool.category);
+          }}
+        />
+      )}
 
       {/* My Stack Panel */}
-      <MyStack
-        open={stackOpen}
-        onClose={() => setStackOpen(false)}
-        bookmarkedTools={bookmarkedTools}
-        onToggleBookmark={toggleBookmark}
-        onExport={exportMarkdown}
-        onClear={clearBookmarks}
-        accent={activeCatObj.color}
-      />
+      {hasOpenedStack && (
+        <MyStack
+          open={stackOpen}
+          onClose={() => setStackOpen(false)}
+          bookmarkedTools={bookmarkedTools}
+          onToggleBookmark={toggleBookmark}
+          onExport={exportMarkdown}
+          onClear={clearBookmarks}
+          accent={activeColor}
+        />
+      )}
 
       {/* Comparison Matrix */}
-      <ComparisonMatrix
-        open={compareOpen}
-        onClose={() => setCompareOpen(false)}
-        compareIds={[...compareSet]}
-        accent={activeCatObj.color}
-      />
+      {hasOpenedCompare && (
+        <ComparisonMatrix
+          open={compareOpen}
+          onClose={() => setCompareOpen(false)}
+          compareIds={[...compareSet]}
+          accent={activeColor}
+        />
+      )}
 
       {/* Share Panel */}
-      <SharePanel
-        open={shareOpen}
-        onClose={() => setShareOpen(false)}
-        selectedIds={[...selected]}
-        accent={activeCatObj.color}
-      />
+      {hasOpenedShare && (
+        <SharePanel
+          open={shareOpen}
+          onClose={() => setShareOpen(false)}
+          selectedIds={[...selected]}
+          accent={activeColor}
+        />
+      )}
 
       {/* Cost Calculator */}
-      <CostCalculator
-        open={calcOpen}
-        onClose={() => setCalcOpen(false)}
-        accent={activeCatObj.color}
-      />
+      {hasOpenedCalc && (
+        <CostCalculator
+          open={calcOpen}
+          onClose={() => setCalcOpen(false)}
+          accent={activeColor}
+        />
+      )}
     </div>
   );
 }

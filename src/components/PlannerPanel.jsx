@@ -190,7 +190,7 @@ export default function PlannerPanel({
             <p style={{ fontSize: 11.5, color: "var(--text-secondary)", margin: "0 0 8px", lineHeight: 1.5 }}>
               {result.stack_notes}
             </p>
-            <p style={{ fontFamily: "monospace", fontSize: 10, color: "#76ff03", margin: 0 }}>
+            <p style={{ fontFamily: "monospace", fontSize: 10, color: "var(--income-color)", margin: 0 }}>
               💰 {result.estimated_monthly_cost}
             </p>
           </motion.div>

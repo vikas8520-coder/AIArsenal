@@ -1,6 +1,6 @@
 import { JetBrains_Mono, IBM_Plex_Sans } from "next/font/google";
 import Script from "next/script";
-import Footer from "../src/components/Footer";
+import ConditionalFooter from "../src/components/ConditionalFooter";
 import "./globals.css";
 
 const jetbrainsMono = JetBrains_Mono({
@@ -110,12 +110,12 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         {children}
-        <Footer />
+        <ConditionalFooter />
       </body>
       {/* Plausible Analytics */}
       <Script
         defer
-        data-domain="aiarsenal.vercel.app"
+        data-domain="ai-arsenal-nu.vercel.app"
         src="https://plausible.io/js/script.js"
         strategy="afterInteractive"
       />

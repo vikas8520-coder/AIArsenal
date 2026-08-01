@@ -14,7 +14,7 @@ export async function generateMetadata({ params }) {
   const tool = getToolBySlug(slug);
   if (!tool) return {};
 
-  const altCount = findSimilarTools(tool.id, 10).length;
+  const altCount = (await findSimilarTools(tool.id, 10)).length;
   const cat = getCategoryById(tool.category);
 
   return {
@@ -44,7 +44,7 @@ export default async function AlternativesPage({ params }) {
   if (!tool) notFound();
 
   const cat = getCategoryById(tool.category);
-  const similar = findSimilarTools(tool.id, 10);
+  const similar = await findSimilarTools(tool.id, 10);
   const alternatives = similar
     .map(({ id, score }) => ({
       tool: TOOLS.find((t) => t.id === id),

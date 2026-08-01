@@ -34,6 +34,20 @@
 
   /* Transitions */
   --ease-premium: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Semantic badge colors */
+  --badge-oss-color: #00ff88;
+  --badge-oss-bg: rgba(0, 255, 136, 0.1);
+  --badge-oss-border: rgba(0, 255, 136, 0.2);
+  --badge-new-color: #00f0ff;
+  --badge-new-bg: rgba(0, 240, 255, 0.12);
+  --badge-new-border: rgba(0, 240, 255, 0.25);
+  --badge-sponsored-color: #eab308;
+  --badge-sponsored-bg: rgba(234, 179, 8, 0.1);
+  --badge-sponsored-border: rgba(234, 179, 8, 0.2);
+  --success-color: #00ff88;
+  --income-color: #76ff03;
+  --brand-color: #00f0ff;
 }
 
 /* ── Base ── */
@@ -129,7 +143,8 @@ body {
   position: absolute;
   inset: -2px;
   border-radius: 4px;
-  border: 1px solid rgba(0, 255, 136, 0.4);
+  border: 1px solid var(--badge-oss-color);
+  opacity: 0.4;
   animation: oss-ping 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
@@ -160,7 +175,7 @@ body {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #00ff88;
+  background: var(--badge-oss-color);
   animation: confetti-pop 0.6s ease-out forwards;
   pointer-events: none;
 }
@@ -248,6 +263,20 @@ body {
   /* Light borders */
   --border: rgba(0, 0, 0, 0.07);
   --border-bright: rgba(0, 0, 0, 0.13);
+
+  /* Darker semantic badge colors for light mode readability */
+  --badge-oss-color: #047857;
+  --badge-oss-bg: rgba(5, 150, 80, 0.12);
+  --badge-oss-border: rgba(5, 150, 80, 0.25);
+  --badge-new-color: #0e7490;
+  --badge-new-bg: rgba(8, 145, 178, 0.12);
+  --badge-new-border: rgba(8, 145, 178, 0.25);
+  --badge-sponsored-color: #a16207;
+  --badge-sponsored-bg: rgba(180, 120, 0, 0.12);
+  --badge-sponsored-border: rgba(180, 120, 0, 0.25);
+  --success-color: #047857;
+  --income-color: #4d7c0f;
+  --brand-color: #0e7490;
 }
 
 /* Light mode scrollbar */

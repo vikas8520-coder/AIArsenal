@@ -7,7 +7,6 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import toolEmbeddings from "../data/tool-embeddings.json";
 import { TOOLS } from "../data/tools";
 
 // Build a lookup map once
@@ -69,12 +68,6 @@ export function useSemanticSearch() {
         }
       }
     };
-
-    // Send pre-computed embeddings to worker
-    worker.postMessage({
-      type: "init",
-      data: { embeddings: toolEmbeddings },
-    });
 
     workerRef.current = worker;
 

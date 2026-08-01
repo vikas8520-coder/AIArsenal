@@ -5,7 +5,7 @@ const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
 const PLAUSIBLE_API_KEY = process.env.PLAUSIBLE_API_KEY;
 const PLAUSIBLE_SITE_ID =
-  process.env.PLAUSIBLE_SITE_ID || "aiarsenal.vercel.app";
+  process.env.PLAUSIBLE_SITE_ID || "ai-arsenal-nu.vercel.app";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

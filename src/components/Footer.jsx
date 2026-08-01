@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
+import logoImg from "@/public/logo-192.png";
 
 const SECTIONS = [
   {
@@ -59,7 +61,7 @@ export default function Footer() {
     <footer
       style={{
         borderTop: "1px solid var(--border)",
-        marginTop: 60,
+        marginTop: 0,
         padding: "40px 24px 28px",
         background: "var(--surface-1)",
       }}
@@ -85,10 +87,12 @@ export default function Footer() {
               marginBottom: 10,
             }}
           >
-            <img
-              src="/logo.png"
+            <Image
+              src={logoImg}
               alt=""
-              style={{ width: 28, height: 28, borderRadius: 6 }}
+              width={28}
+              height={28}
+              style={{ borderRadius: 6, overflow: "hidden" }}
             />
             <span
               style={{
@@ -98,7 +102,7 @@ export default function Footer() {
                 color: "var(--text-strong)",
               }}
             >
-              AI<span style={{ color: "#00f0ff" }}>Arsenal</span>
+              AI<span style={{ color: "var(--brand-color)" }}>Arsenal</span>
             </span>
           </div>
           <p
@@ -162,9 +166,9 @@ export default function Footer() {
                   fontSize: 10,
                   fontWeight: 700,
                   padding: "6px 12px",
-                  background: status === "done" ? "#10b98120" : "#00f0ff20",
-                  border: `1px solid ${status === "done" ? "#10b98150" : "#00f0ff50"}`,
-                  color: status === "done" ? "#10b981" : "#00f0ff",
+                  background: status === "done" ? "var(--badge-oss-bg)" : "var(--badge-new-bg)",
+                  border: `1px solid ${status === "done" ? "var(--badge-oss-border)" : "var(--badge-new-border)"}`,
+                  color: status === "done" ? "var(--success-color)" : "var(--brand-color)",
                   borderRadius: 6,
                   cursor: status === "loading" ? "wait" : "pointer",
                 }}
@@ -233,7 +237,7 @@ export default function Footer() {
                         transition: "color 0.15s",
                       }}
                       onMouseEnter={(e) =>
-                        (e.currentTarget.style.color = "#00f0ff")
+                        (e.currentTarget.style.color = "var(--brand-color)")
                       }
                       onMouseLeave={(e) =>
                         (e.currentTarget.style.color = "var(--text-secondary)")

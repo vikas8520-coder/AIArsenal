@@ -11,8 +11,11 @@ import { getToolSlug } from "@/src/lib/tools";
 import { getTypicalPairs } from "@/src/lib/typicalPairs";
 import { trackToolView } from "@/src/lib/visitorIntel";
 import ToolVoteButtons from "@/src/components/ToolVoteButtons";
+import useTheme from "@/src/hooks/useTheme";
+import { adjustColorForTheme } from "@/src/lib/colors";
 
 export default function ToolPageClient({ tool }) {
+  const theme = useTheme();
   const [bookmarked, setBookmarked] = useState(() => {
     try {
       const raw = localStorage.getItem("aiarsenal-bookmarks");
@@ -33,17 +36,28 @@ export default function ToolPageClient({ tool }) {
     } catch {}
   };
 
-  const similar = useMemo(() => {
-    const results = findSimilarTools(tool.id, 5);
-    return results
-      .map(({ id, score }) => ({
-        tool: TOOLS.find((t) => t.id === id),
-        score,
-      }))
-      .filter((r) => r.tool);
+  const [similar, setSimilar] = useState([]);
+  const [similarLoading, setSimilarLoading] = useState(true);
+  useEffect(() => {
+    setSimilarLoading(true);
+    let cancelled = false;
+    findSimilarTools(tool.id, 5).then((results) => {
+      if (cancelled) return;
+      setSimilar(
+        results
+          .map(({ id, score }) => ({
+            tool: TOOLS.find((t) => t.id === id),
+            score,
+          }))
+          .filter((r) => r.tool)
+      );
+      setSimilarLoading(false);
+    });
+    return () => { cancelled = true; };
   }, [tool.id]);
 
   const cat = getCategoryById(tool.category);
+  const catColor = adjustColorForTheme(cat?.color, theme);
   const toolUrl = tool.url?.startsWith("http") ? tool.url : `https://${tool.url}`;
   const attrs = getAttributes(tool.id);
   const typicalPairs = useMemo(() => {
@@ -192,12 +206,12 @@ export default function ToolPageClient({ tool }) {
             <dd style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)" }}>{tool.company}</dd>
 
             <dt style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-faint)", letterSpacing: 1 }}>CATEGORY</dt>
-            <dd style={{ margin: 0, fontSize: 13, color: cat?.color }}>{tool.category} › {tool.subcategory}</dd>
+            <dd style={{ margin: 0, fontSize: 13, color: catColor }}>{tool.category} › {tool.subcategory}</dd>
 
             {tool.oss && (
               <>
                 <dt style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-faint)", letterSpacing: 1 }}>OPEN SOURCE</dt>
-                <dd style={{ margin: 0, fontSize: 13, color: "#00ff88" }}>Yes</dd>
+                <dd style={{ margin: 0, fontSize: 13, color: "var(--success-color)" }}>Yes</dd>
               </>
             )}
 
@@ -434,7 +448,12 @@ export default function ToolPageClient({ tool }) {
         )}
 
         {/* Similar Tools */}
-        {similar.length > 0 && (
+        {similarLoading && (
+          <div style={{ marginBottom: 32, color: "var(--text-faint)", fontSize: 11, fontFamily: "var(--font-mono)" }}>
+            Finding similar tools…
+          </div>
+        )}
+        {!similarLoading && similar.length > 0 && (
           <div style={{ marginBottom: 32 }}>
             <h2
               style={{

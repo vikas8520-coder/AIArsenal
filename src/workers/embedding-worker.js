@@ -1,16 +1,19 @@
 /**
  * Web Worker for semantic search using transformers.js
  *
- * Loads the all-MiniLM-L6-v2 model once, then processes query embeddings
- * off the main thread. Pre-computed tool embeddings are passed in on init.
+ * Fetches pre-computed tool embeddings on first search, loads the
+ * all-MiniLM-L6-v2 model only when a semantic query is issued, then
+ * processes query embeddings off the main thread.
  */
 
 import { pipeline } from "@huggingface/transformers";
 
 let embedder = null;
-let toolEmbeddings = null; // { id: Float32Array }
-let modelLoading = false;
+let toolEmbeddings = null;
+let embeddingsPromise = null;
 let modelReady = false;
+let modelLoading = false;
+let modelPromise = null;
 
 // ── Cosine similarity ───────────────────────────────────────────────────────
 function cosineSimilarity(a, b) {
@@ -23,23 +26,37 @@ function cosineSimilarity(a, b) {
   return dot / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-// ── Load model ──────────────────────────────────────────────────────────────
-async function loadModel() {
-  if (modelReady || modelLoading) return;
-  modelLoading = true;
+// ── Load model lazily on first search ───────────────────────────────────────
+async function ensureModel() {
+  if (modelReady) return;
+  if (modelPromise) return modelPromise;
 
-  try {
+  modelLoading = true;
+  modelPromise = (async () => {
     self.postMessage({ type: "status", status: "loading" });
     embedder = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2", {
       dtype: "q8",
     });
     modelReady = true;
     self.postMessage({ type: "status", status: "ready" });
-  } catch (err) {
+  })().catch((err) => {
     self.postMessage({ type: "status", status: "error", error: err.message });
-  } finally {
+    throw err;
+  }).finally(() => {
     modelLoading = false;
+  });
+
+  return modelPromise;
+}
+
+// ── Load embeddings lazily on first search ──────────────────────────────────
+async function ensureEmbeddings() {
+  if (toolEmbeddings) return toolEmbeddings;
+  if (!embeddingsPromise) {
+    embeddingsPromise = fetch("/tool-embeddings.json").then((r) => r.json());
   }
+  toolEmbeddings = await embeddingsPromise;
+  return toolEmbeddings;
 }
 
 // ── Handle messages ─────────────────────────────────────────────────────────
@@ -47,48 +64,24 @@ self.onmessage = async (e) => {
   const { type, data } = e.data;
 
   if (type === "init") {
-    // Receive pre-computed embeddings
-    toolEmbeddings = data.embeddings; // { toolId: number[] }
-    // Start loading model immediately
-    loadModel();
+    // Legacy no-op; embeddings are fetched on first search.
     return;
   }
 
   if (type === "search") {
     const { query, topK = 8, minScore = 0.25, requestId } = data;
 
-    if (!modelReady) {
-      // Model still loading — try to load and wait
-      if (!modelLoading) loadModel();
-      // Return empty for now, client will retry or show keyword results
-      self.postMessage({
-        type: "results",
-        requestId,
-        results: [],
-        ready: false,
-      });
-      return;
-    }
-
-    if (!toolEmbeddings) {
-      self.postMessage({
-        type: "results",
-        requestId,
-        results: [],
-        ready: true,
-        error: "No embeddings loaded",
-      });
-      return;
-    }
-
     try {
+      const embeddings = await ensureEmbeddings();
+      await ensureModel();
+
       // Embed the query
       const output = await embedder(query, { pooling: "mean", normalize: true });
       const queryVec = Array.from(output.data);
 
       // Compute similarity with all tools
       const scores = [];
-      for (const [toolId, embedding] of Object.entries(toolEmbeddings)) {
+      for (const [toolId, embedding] of Object.entries(embeddings)) {
         const score = cosineSimilarity(queryVec, embedding);
         if (score >= minScore) {
           scores.push({ id: toolId, score });

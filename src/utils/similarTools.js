@@ -1,4 +1,4 @@
-import embeddings from "../data/tool-embeddings.json";
+import { loadEmbeddings } from "../lib/loadEmbeddings";
 
 function cosineSimilarity(a, b) {
   let dot = 0, magA = 0, magB = 0;
@@ -10,7 +10,8 @@ function cosineSimilarity(a, b) {
   return dot / (Math.sqrt(magA) * Math.sqrt(magB));
 }
 
-export function findSimilarTools(toolId, topK = 5) {
+export async function findSimilarTools(toolId, topK = 5) {
+  const embeddings = await loadEmbeddings();
   const source = embeddings[toolId];
   if (!source) return [];
 

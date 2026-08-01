@@ -1,8 +1,11 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { STATS } from "../data/tools";
+import { adjustColorForTheme } from "@/src/lib/colors";
 import SmartSearch from "./SmartSearch";
+import logoImg from "@/public/logo-192.png";
 
 function AnimatedCounter({ target, duration = 1200 }) {
   const [val, setVal] = useState(0);
@@ -36,6 +39,7 @@ export default function Header({
   onOpenShare, hasSelected,
   onOpenCalc, onCompare,
 }) {
+  const displayAccent = adjustColorForTheme(accent, theme);
   const [booted, setBooted] = useState(() => {
     try { return !!localStorage.getItem("nexus-booted"); } catch { return false; }
   });
@@ -59,7 +63,7 @@ export default function Header({
     color: "var(--text-muted)", transition: "all 0.15s", whiteSpace: "nowrap",
   };
 
-  const hoverOn = (e) => { e.currentTarget.style.color = accent; e.currentTarget.style.borderColor = `${accent}40`; };
+  const hoverOn = (e) => { e.currentTarget.style.color = displayAccent; e.currentTarget.style.borderColor = `${displayAccent}40`; };
   const hoverOff = (e) => { e.currentTarget.style.color = ""; e.currentTarget.style.borderColor = ""; };
 
   return (
@@ -79,17 +83,20 @@ export default function Header({
             transition={{ duration: 0.4 }}
             style={{ display: "flex", alignItems: "center", gap: 10 }}
           >
-            <img
-              src="/logo.png"
+            <Image
+              src={logoImg}
               alt="AIArsenal"
-              style={{ width: 38, height: 38, borderRadius: 9, flexShrink: 0 }}
+              width={38}
+              height={38}
+              priority
+              style={{ borderRadius: 9, flexShrink: 0, overflow: "hidden" }}
             />
             <h1 style={{
               margin: 0, fontFamily: "monospace", fontWeight: 700,
               fontSize: "clamp(16px, 2.5vw, 22px)", color: "var(--text-strong)",
               letterSpacing: -0.5,
             }}>
-              AI<span style={{ color: accent }}>Arsenal</span>
+              AI<span style={{ color: displayAccent }}>Arsenal</span>
             </h1>
             <span style={{
               fontSize: 9, fontFamily: "monospace",
@@ -112,13 +119,13 @@ export default function Header({
           >
             <StatChip
               value={<AnimatedCounter target={STATS.total} duration={1000} />}
-              label="tools" color={accent}
+              label="tools" color={displayAccent}
             />
             <StatChip
               value={<AnimatedCounter target={STATS.oss} duration={900} />}
-              label="OSS" color="#00ff88"
+              label="OSS" color="var(--badge-oss-color)"
             />
-            <StatChip value={STATS.freeCredits} label="credits" color="#eab308" />
+            <StatChip value={STATS.freeCredits} label="credits" color="var(--badge-sponsored-color)" />
           </motion.div>
         )}
       </div>
@@ -128,7 +135,7 @@ export default function Header({
         <SmartSearch
           value={search}
           onChange={onSearch}
-          accent={accent}
+          accent={displayAccent}
           onSelectTool={onSelectTool}
           tools={tools}
           selected={selected}
@@ -189,17 +196,17 @@ export default function Header({
           style={{
             ...pillStyle,
             textDecoration: "none",
-            color: accent,
-            borderColor: `${accent}35`,
-            background: `${accent}08`,
+            color: displayAccent,
+            borderColor: `${displayAccent}35`,
+            background: `${displayAccent}08`,
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = `${accent}60`;
-            e.currentTarget.style.background = `${accent}15`;
+            e.currentTarget.style.borderColor = `${displayAccent}60`;
+            e.currentTarget.style.background = `${displayAccent}15`;
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = `${accent}35`;
-            e.currentTarget.style.background = `${accent}08`;
+            e.currentTarget.style.borderColor = `${displayAccent}35`;
+            e.currentTarget.style.background = `${displayAccent}08`;
           }}
         >
           ⌕ ASK AI
@@ -332,10 +339,10 @@ export default function Header({
         </button>
 
         {/* Theme toggle */}
-        <ThemeToggle theme={theme} onToggle={onToggleTheme} accent={accent} />
+        <ThemeToggle theme={theme} onToggle={onToggleTheme} accent={displayAccent} />
 
         {/* OSS filter */}
-        <OSSToggle active={filterOSS} onToggle={onToggleOSS} accent={accent} />
+        <OSSToggle active={filterOSS} onToggle={onToggleOSS} accent={displayAccent} />
 
         {/* Sort */}
         <select
@@ -445,10 +452,10 @@ function OSSToggle({ active, onToggle, accent }) {
         onClick={handleToggle}
         style={{
           fontFamily: "monospace", fontSize: 10,
-          background: active ? "rgba(0,255,136,0.12)" : "var(--surface-1)",
-          border: `1px solid ${active ? "rgba(0,255,136,0.4)" : "var(--border-bright)"}`,
+          background: active ? "var(--badge-oss-bg)" : "var(--surface-1)",
+          border: `1px solid ${active ? "var(--badge-oss-border)" : "var(--border-bright)"}`,
           borderRadius: 7, padding: "8px 12px", cursor: "pointer",
-          color: active ? "#00ff88" : "var(--text-muted)",
+          color: active ? "var(--badge-oss-color)" : "var(--text-muted)",
           transition: "all 0.15s",
         }}
       >

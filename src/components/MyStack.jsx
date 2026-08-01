@@ -1,8 +1,33 @@
 "use client";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import { getCategoryById } from "../data/categories";
 
 export default function MyStack({ open, onClose, bookmarkedTools, onToggleBookmark, onExport, onClear, accent = "#00f0ff" }) {
+  const panelRef = useRef(null);
+  const [copyStatus, setCopyStatus] = useState(null); // "copied" | "failed" | null
+
+  useFocusTrap({ open, containerRef: panelRef, restoreFocus: true });
+
+  // Dismiss on Escape
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose]);
+
+  const handleExport = async () => {
+    try {
+      await navigator.clipboard.writeText(onExport());
+      setCopyStatus("copied");
+    } catch {
+      setCopyStatus("failed");
+    }
+    setTimeout(() => setCopyStatus(null), 2000);
+  };
+
   return (
     <AnimatePresence>
       {open && (
@@ -22,10 +47,14 @@ export default function MyStack({ open, onClose, bookmarkedTools, onToggleBookma
 
           {/* Panel */}
           <motion.div
+            ref={panelRef}
             initial={{ opacity: 0, x: 300 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 300 }}
             transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="My stack"
             style={{
               position: "fixed", top: 0, right: 0, bottom: 0,
               zIndex: 61,
@@ -51,13 +80,14 @@ export default function MyStack({ open, onClose, bookmarkedTools, onToggleBookma
               </span>
               <button
                 onClick={onClose}
+                aria-label="Close"
                 style={{
                   background: "none", border: "none", cursor: "pointer",
                   fontFamily: "monospace", fontSize: 14, color: "var(--text-faint)",
                   padding: "2px 6px", lineHeight: 1,
                 }}
               >
-                x
+                <span aria-hidden="true">x</span>
               </button>
             </div>
 
@@ -140,18 +170,18 @@ export default function MyStack({ open, onClose, bookmarkedTools, onToggleBookma
                 borderTop: "1px solid var(--border)",
               }}>
                 <button
-                  onClick={() => {
-                    const md = onExport();
-                    navigator.clipboard.writeText(md).catch(() => {});
-                  }}
+                  onClick={handleExport}
                   style={{
                     flex: 1, fontFamily: "monospace", fontSize: 10,
-                    background: `${accent}20`, color: accent,
-                    border: `1px solid ${accent}35`,
+                    background: copyStatus === "failed" ? "rgba(255,107,107,0.1)" : `${accent}20`,
+                    color: copyStatus === "copied" ? "var(--success-color)" : copyStatus === "failed" ? "#ff6b6b" : accent,
+                    border: copyStatus === "failed" ? "1px solid rgba(255,107,107,0.25)" : `1px solid ${accent}35`,
                     borderRadius: 7, padding: "8px 12px", cursor: "pointer",
                   }}
                 >
-                  Export Markdown
+                  <span aria-live="polite">
+                    {copyStatus === "copied" ? "✓ Copied!" : copyStatus === "failed" ? "Copy failed" : "Export Markdown"}
+                  </span>
                 </button>
                 <button
                   onClick={onClear}

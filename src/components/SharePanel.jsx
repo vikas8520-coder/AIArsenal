@@ -1,11 +1,23 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import { TOOLS } from "../data/tools";
 import { encodeStack } from "../utils/stackUrl";
 
 export default function SharePanel({ open, onClose, selectedIds, accent = "#00f0ff" }) {
+  const panelRef = useRef(null);
   const [copied, setCopied] = useState(null); // "link" | "markdown" | null
+
+  useFocusTrap({ open, containerRef: panelRef, restoreFocus: true });
+
+  // Dismiss on Escape
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose]);
 
   const tools = selectedIds.map((id) => TOOLS.find((t) => t.id === id)).filter(Boolean);
 
@@ -28,7 +40,7 @@ export default function SharePanel({ open, onClose, selectedIds, accent = "#00f0
         (t) => `| ${t.name} | ${t.category} | ${t.free} | [${t.url}](https://${t.url}) |`
       ),
       "",
-      `*Shared via [AIArsenal](https://aiarsenal.vercel.app)*`,
+      `*Shared via [AIArsenal](https://ai-arsenal-nu.vercel.app)*`,
     ];
     navigator.clipboard.writeText(lines.join("\n")).then(() => {
       setCopied("markdown");
@@ -64,7 +76,7 @@ export default function SharePanel({ open, onClose, selectedIds, accent = "#00f0
     // Subtitle
     ctx.fillStyle = "#666";
     ctx.font = "11px monospace";
-    ctx.fillText(`${tools.length} tools — aiarsenal.vercel.app`, padding, padding + 40);
+    ctx.fillText(`${tools.length} tools — ai-arsenal-nu.vercel.app`, padding, padding + 40);
 
     // Divider
     ctx.strokeStyle = "#222";
@@ -137,10 +149,14 @@ export default function SharePanel({ open, onClose, selectedIds, accent = "#00f0
             }}
           >
           <motion.div
+            ref={panelRef}
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Share stack"
             style={{
               pointerEvents: "auto",
               width: 340, maxWidth: "100%", borderRadius: 14,
