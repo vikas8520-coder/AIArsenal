@@ -81,6 +81,18 @@ const defaultEdgeOptions = {
   style: { stroke: "var(--accent, #00f0ff)", strokeWidth: 1.6 },
 };
 
+const GOAL_CARDS = [
+  { id: "research", emoji: "🔍", title: "Research" },
+  { id: "content", emoji: "✍️", title: "Content" },
+  { id: "code", emoji: "⌨️", title: "Code" },
+  { id: "images", emoji: "🎨", title: "Images" },
+  { id: "voice", emoji: "🎙️", title: "Voice" },
+  { id: "data", emoji: "📊", title: "Data" },
+  { id: "agents", emoji: "🤖", title: "Agents" },
+  { id: "local", emoji: "🏠", title: "Local AI" },
+  { id: "app", emoji: "🏗️", title: "AI App" },
+];
+
 function CanvasInner() {
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
@@ -208,107 +220,6 @@ function CanvasInner() {
     }
   }, [nodes, edges, pushHistory]);
 
-  // ── node/edge updates ──
-  const onNodesChange = useCallback(
-    (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
-    []
-  );
-  const onEdgesChange = useCallback(
-    (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
-    []
-  );
-  const onConnect = useCallback(
-    (params) =>
-      setEdges((eds) =>
-        addEdge(
-          {
-            ...params,
-            label: "data",
-            style: { stroke: "var(--accent, #00f0ff)", strokeWidth: 1.6 },
-            markerEnd: { type: "arrowclosed", width: 14, height: 14 },
-          },
-          eds
-        )
-      ),
-    []
-  );
-
-  // ── drag & drop from palette ──
-  const onDragOver = useCallback((e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  }, []);
-
-  const onDrop = useCallback(
-    (e) => {
-      e.preventDefault();
-      const raw = e.dataTransfer.getData("application/aiarsenal-tool");
-      if (!raw) return;
-      try {
-        const payload = JSON.parse(raw);
-        const position = screenToFlowPosition({ x: e.clientX, y: e.clientY });
-        
-        // Handle flow control nodes (no toolId, but has nodeType)
-        if (payload.nodeType) {
-          const id = `${payload.nodeType}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-          const newNode = {
-            id,
-            type: payload.nodeType, // trigger, condition, action, output
-            position,
-            data: {
-              label: payload.name,
-              subcategory: payload.subcategory,
-              description: payload.description,
-              pricing: payload.pricing,
-              color: payload.color,
-            },
-          };
-          setNodes((nds) => [...nds, newNode]);
-          showToast(`Added ${payload.name} to canvas`);
-        } else {
-          // Regular tool from directory
-          const tool = payload;
-          const id = `tool-${tool.toolId || Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-          const newNode = {
-            id,
-            type: "tool",
-            position,
-            data: {
-              label: tool.name,
-              category: tool.category,
-              subcategory: tool.subcategory,
-              description: tool.description,
-              pricing: tool.pricing,
-              toolId: tool.toolId,
-              url: tool.url,
-            },
-          };
-          setNodes((nds) => [...nds, newNode]);
-          showToast(`Added ${tool.name} to canvas`);
-        }
-      } catch {
-        /* bad payload */
-      }
-    },
-    [screenToFlowPosition, showToast]
-  );
-
-  // ── toolbar actions ──
-  const handleSave = useCallback(() => {
-    setSaveState("saving");
-    try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ nodes: savedNodesRef.current, edges: savedEdgesRef.current })
-      );
-      setTimeout(() => setSaveState("saved"), 300);
-      showToast("Canvas saved to this browser");
-    } catch {
-      setSaveState("idle");
-      showToast("Could not save (storage full)");
-    }
-  }, [showToast]);
-
   // ── Cost Calculator ──
   const calculateCost = useCallback(() => {
     // Pricing estimates per tool (monthly USD)
@@ -326,7 +237,7 @@ function CanvasInner() {
       "Codeium": 0,
       "CodeWhisperer": 0,
       "Supermaven": 10,
-      "n8n": 20, // cloud
+      "n8n": 20,
       "Activepieces": 0,
       "Zapier": 30,
       "Make": 9,
@@ -441,6 +352,22 @@ function CanvasInner() {
 
   const costInfo = calculateCost();
 
+  // ── toolbar actions ──
+  const handleSave = useCallback(() => {
+    setSaveState("saving");
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ nodes: savedNodesRef.current, edges: savedEdgesRef.current })
+      );
+      setTimeout(() => setSaveState("saved"), 300);
+      showToast("Canvas saved to this browser");
+    } catch {
+      setSaveState("idle");
+      showToast("Could not save (storage full)");
+    }
+  }, [showToast]);
+
   const handleExport = useCallback(() => {
     const data = { nodes, edges, exportedAt: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -460,7 +387,7 @@ function CanvasInner() {
       nodes: nodes.map((node) => ({
         id: node.id,
         name: node.data?.label || "Node",
-        type: "n8n-nodes-base.function", // Generic function node - user customizes
+        type: "n8n-nodes-base.function",
         typeVersion: 1,
         position: [Math.round(node.position.x), Math.round(node.position.y)],
         parameters: {
@@ -686,6 +613,91 @@ function CanvasInner() {
 
   const isEmpty = nodes.length === 0;
 
+  // ── node/edge updates ──
+  const onNodesChange = useCallback(
+    (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
+    []
+  );
+  const onEdgesChange = useCallback(
+    (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
+    []
+  );
+  const onConnect = useCallback(
+    (params) =>
+      setEdges((eds) =>
+        addEdge(
+          {
+            ...params,
+            label: "data",
+            style: { stroke: "var(--accent, #00f0ff)", strokeWidth: 1.6 },
+            markerEnd: { type: "arrowclosed", width: 14, height: 14 },
+          },
+          eds
+        )
+      ),
+    []
+  );
+
+  // ── drag & drop from palette ──
+  const onDragOver = useCallback((e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  }, []);
+
+  const onDrop = useCallback(
+    (e) => {
+      e.preventDefault();
+      const raw = e.dataTransfer.getData("application/aiarsenal-tool");
+      if (!raw) return;
+      try {
+        const payload = JSON.parse(raw);
+        const position = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+        
+        // Handle flow control nodes (no toolId, but has nodeType)
+        if (payload.nodeType) {
+          const id = `${payload.nodeType}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+          const newNode = {
+            id,
+            type: payload.nodeType, // trigger, condition, action, output
+            position,
+            data: {
+              label: payload.name,
+              subcategory: payload.subcategory,
+              description: payload.description,
+              pricing: payload.pricing,
+              color: payload.color,
+            },
+          };
+          setNodes((nds) => [...nds, newNode]);
+          showToast(`Added ${payload.name} to canvas`);
+        } else {
+          // Regular tool from directory
+          const tool = payload;
+          const id = `tool-${tool.toolId || Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+          const newNode = {
+            id,
+            type: "tool",
+            position,
+            data: {
+              label: tool.name,
+              category: tool.category,
+              subcategory: tool.subcategory,
+              description: tool.description,
+              pricing: tool.pricing,
+              toolId: tool.toolId,
+              url: tool.url,
+            },
+          };
+          setNodes((nds) => [...nds, newNode]);
+          showToast(`Added ${tool.name} to canvas`);
+        }
+      } catch {
+        /* bad payload */
+      }
+    },
+    [screenToFlowPosition, showToast]
+  );
+
   return (
     <div
       style={{
@@ -766,26 +778,244 @@ function CanvasInner() {
         </div>
       )}
 
-      <div style={{ display: "flex", flex: 1, minHeight: 0, position: "relative" }}>
-        <CanvasSidebar />
+      {/* Main content area: Sidebar | Canvas | Advisor */}
+      <div style={{ display: "flex", flex: 1, overflow: "hidden", position: "relative" }}>
+        {/* Left sidebar: Tool palette */}
+        <CanvasSidebar onClose={() => {}} />
 
-        {/* Canvas area */}
+        {/* Center: React Flow canvas */}
         <div style={{ flex: 1, position: "relative", width: "100%", height: "100%" }}>
-          {/* Empty state: goal-first onboarding */}
+          <ReactFlowProvider>
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              onDragOver={onDragOver}
+              onDrop={onDrop}
+              nodeTypes={nodeTypes}
+              defaultEdgeOptions={defaultEdgeOptions}
+              fitView={false}
+              attributionPosition="bottom-right"
+              zoomable
+              nodeColor={(n) => {
+                const catColors = {
+                  "Developer Tools": "#00ff88",
+                  "End-User Tools": "#ff6b9d",
+                  "Creative AI": "#ffd700",
+                  "MCP Servers": "#12b886",
+                  "Git Repos": "#f59e0b",
+                  "Automation & Agents": "#a78bfa",
+                  "Open-Source Models": "#38bdf8",
+                };
+                return catColors[n.data?.category] || "#64748b";
+              }}
+              maskColor="rgba(0,0,0,0.6)"
+              style={{ background: "var(--surface-1)" }}
+            >
+              <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="var(--border)" />
+              <Controls />
+              <MiniMap
+                zoomable
+                nodeColor={(n) => {
+                  const catColors = {
+                    "Developer Tools": "#00ff88",
+                    "End-User Tools": "#ff6b9d",
+                    "Creative AI": "#ffd700",
+                    "MCP Servers": "#12b886",
+                    "Git Repos": "#f59e0b",
+                    "Automation & Agents": "#a78bfa",
+                    "Open-Source Models": "#38bdf8",
+                  };
+                  return catColors[n.data?.category] || "#64748b";
+                }}
+                maskColor="rgba(0,0,0,0.6)"
+                style={{ background: "var(--surface-1)" }}
+              />
+            </ReactFlow>
+          </ReactFlowProvider>
+
+          {/* Node properties panel */}
+          {selectedNode && (
+            <div
+              style={{
+                position: "absolute",
+                top: 12,
+                right: 12,
+                zIndex: 30,
+                width: 230,
+                background: "var(--surface-2)",
+                border: "1px solid var(--border-bright)",
+                borderRadius: 12,
+                padding: 12,
+                boxShadow: "0 12px 32px rgba(0,0,0,0.3)",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                <span style={{ fontSize: 10, fontFamily: "monospace", fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: "var(--text-mid)" }}>
+                  Node
+                </span>
+                <button
+                  onClick={closeProperties}
+                  style={{ background: "none", border: "none", color: "var(--text-faint)", cursor: "pointer", fontSize: 12 }}
+                  aria-label="Close properties"
+                >
+                  ✕
+                </button>
+              </div>
+              {editingNodeId === selectedNode.id ? (
+                <input
+                  autoFocus
+                  defaultValue={selectedNode.data?.label}
+                  onBlur={(e) => renameNode(selectedNode.id, e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && renameNode(selectedNode.id, e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "6px 8px",
+                    fontSize: 11,
+                    fontFamily: "monospace",
+                    background: "var(--surface-1)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 6,
+                    color: "var(--text-strong)",
+                    outline: "none",
+                  }}
+                />
+              ) : (
+                <div style={{ fontSize: 11, fontFamily: "monospace", fontWeight: 600, color: "var(--text-strong)", marginBottom: 4 }}>
+                  {selectedNode.data?.label}
+                </div>
+              )}
+              <div style={{ fontSize: 9, color: "var(--text-faint)", marginBottom: 8 }}>
+                {selectedNode.data?.category} › {selectedNode.data?.subcategory}
+              </div>
+              {selectedNode.data?.description && (
+                <div style={{ fontSize: 9.5, color: "var(--text-faint)", marginBottom: 8, lineHeight: 1.4 }}>
+                  {selectedNode.data?.description}
+                </div>
+              )}
+              {selectedNode.data?.pricing && (
+                <div style={{ fontSize: 9, fontFamily: "monospace", fontWeight: 600, color: selectedNode.data.pricing === "Free" ? "#22c55e" : "#f59e0b", marginBottom: 8 }}>
+                  {selectedNode.data.pricing}
+                </div>
+              )}
+              <div style={{ display: "flex", gap: 6 }}>
+                <button
+                  onClick={() => setEditingNodeId(selectedNode.id)}
+                  style={{
+                    flex: 1,
+                    background: "var(--surface-3)",
+                    color: "var(--text-mid)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 7,
+                    padding: "5px 8px",
+                    fontSize: 10,
+                    fontFamily: "monospace",
+                    cursor: "pointer",
+                  }}
+                >
+                  ✎ Rename
+                </button>
+                <button
+                  onClick={deleteSelected}
+                  style={{
+                    flex: 1,
+                    background: "transparent",
+                    border: "1px solid var(--danger, #ef4444)",
+                    color: "var(--danger, #ef4444)",
+                    borderRadius: 7,
+                    padding: "5px 8px",
+                    fontSize: 10,
+                    fontFamily: "monospace",
+                    cursor: "pointer",
+                  }}
+                >
+                  ✕ Delete
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Edge panel */}
+          {selectedEdge && (
+            <div
+              style={{
+                position: "absolute",
+                top: 12,
+                right: 12,
+                zIndex: 30,
+                width: 230,
+                background: "var(--surface-2)",
+                border: "1px solid var(--border-bright)",
+                borderRadius: 12,
+                padding: 12,
+                boxShadow: "0 12px 32px rgba(0,0,0,0.3)",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <span style={{ fontSize: 10, fontFamily: "monospace", fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: "var(--text-mid)" }}>
+                  Connection
+                </span>
+              </div>
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ display: "block", fontSize: 9.5, color: "var(--text-faint)", marginBottom: 4, fontFamily: "monospace" }}>
+                  Label
+                </label>
+                <input
+                  defaultValue={selectedEdge.label || "data"}
+                  onBlur={(e) => renameEdge(selectedEdge.id, e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && renameEdge(selectedEdge.id, e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "6px 8px",
+                    fontSize: 11,
+                    fontFamily: "monospace",
+                    background: "var(--surface-1)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 6,
+                    color: "var(--text-strong)",
+                    outline: "none",
+                  }}
+                />
+              </div>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button
+                  onClick={deleteEdge}
+                  style={{
+                    flex: 1,
+                    background: "transparent",
+                    border: "1px solid var(--danger, #ef4444)",
+                    color: "var(--danger, #ef4444)",
+                    borderRadius: 7,
+                    padding: "5px 8px",
+                    fontSize: 10,
+                    fontFamily: "monospace",
+                    cursor: "pointer",
+                  }}
+                >
+                  ✕ Delete
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Goal picker overlay when empty */}
           {isEmpty && (
             <div
               style={{
                 position: "absolute",
                 inset: 0,
                 zIndex: 20,
+                background: "rgba(0,0,0,0.7)",
                 display: "flex",
+                flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "var(--bg)",
+                padding: 40,
               }}
             >
-              <div style={{ maxWidth: 560, width: "90%", textAlign: "center" }}>
-                <div style={{ fontSize: 26, marginBottom: 8 }}>◈</div>
+              <div style={{ background: "var(--surface-1)", border: "1px solid var(--border-bright)", borderRadius: 16, padding: 32, maxWidth: 700, width: "100%", boxShadow: "0 24px 64px rgba(0,0,0,0.4)" }}>
                 <h1
                   style={{
                     fontFamily: "monospace",
@@ -839,250 +1069,12 @@ function CanvasInner() {
                     </button>
                   ))}
                 </div>
-                <div style={{ marginTop: 16, fontSize: 10, color: "var(--text-faint)" }}>
-                  or{" "}
-                  <button
-                    onClick={() => showToast("Drag tools from the palette to start")}
-                    style={{ background: "none", border: "none", color: "var(--accent, #00f0ff)", cursor: "pointer", fontSize: 10, fontFamily: "monospace", textDecoration: "underline" }}
-                  >
-                    start from scratch
-                  </button>{" "}
-                  with the palette on the left
-                </div>
               </div>
-            </div>
-          )}
-
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            nodeTypes={nodeTypes}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-            defaultEdgeOptions={defaultEdgeOptions}
-            fitView
-            fitViewOptions={{ padding: 0.25 }}
-            minZoom={0.2}
-            maxZoom={2}
-            deleteKeyCode={["Backspace", "Delete"]}
-            proOptions={{ hideAttribution: false }}
-            colorMode="dark"
-            onNodeDoubleClick={(_, node) => setEditingNodeId(node.id)}
-          >
-            <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} color="rgba(120,140,180,0.18)" />
-            <Controls position="bottom-left" showInteractive={false} />
-            <MiniMap
-              position="bottom-right"
-              pannable
-              zoomable
-              nodeColor={(n) => {
-                const catColors = {
-                  "Developer Tools": "#00ff88",
-                  "End-User Tools": "#ff6b9d",
-                  "Creative AI": "#ffd700",
-                  "MCP Servers": "#12b886",
-                  "Git Repos": "#f59e0b",
-                  "Automation & Agents": "#a78bfa",
-                  "Open-Source Models": "#38bdf8",
-                };
-                return catColors[n.data?.category] || "#64748b";
-              }}
-              maskColor="rgba(0,0,0,0.6)"
-              style={{ background: "var(--surface-1)" }}
-            />
-          </ReactFlow>
-
-          {/* Node properties panel */}
-          {selectedNode && (
-            <div
-              style={{
-                position: "absolute",
-                top: 12,
-                right: 12,
-                zIndex: 30,
-                width: 230,
-                background: "var(--surface-2)",
-                border: "1px solid var(--border-bright)",
-                borderRadius: 12,
-                padding: 12,
-                boxShadow: "0 12px 32px rgba(0,0,0,0.3)",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                <span style={{ fontSize: 10, fontFamily: "monospace", fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: "var(--text-mid)" }}>
-                  Node
-                </span>
-                <button
-                  onClick={closeProperties}
-                  style={{ background: "none", border: "none", color: "var(--text-faint)", cursor: "pointer", fontSize: 12 }}
-                  aria-label="Close properties"
-                >
-                  ✕
-                </button>
-              </div>
-              {editingNodeId === selectedNode.id ? (
-                <input
-                  autoFocus
-                  defaultValue={selectedNode.data?.label}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") renameNode(selectedNode.id, e.target.value);
-                    if (e.key === "Escape") setEditingNodeId(null);
-                  }}
-                  onBlur={(e) => renameNode(selectedNode.id, e.target.value)}
-                  style={{
-                    width: "100%",
-                    background: "var(--surface-1)",
-                    border: "1px solid var(--accent, #00f0ff)",
-                    borderRadius: 6,
-                    padding: "4px 8px",
-                    color: "var(--text-strong)",
-                    fontFamily: "monospace",
-                    fontSize: 12,
-                    outline: "none",
-                  }}
-                />
-              ) : (
-                <div
-                  style={{ fontSize: 12, fontFamily: "monospace", fontWeight: 600, color: "var(--text-strong)", cursor: "pointer" }}
-                  onDoubleClick={() => setEditingNodeId(selectedNode.id)}
-                  title="Double-click to rename"
-                >
-                  {selectedNode.data?.label}
-                </div>
-              )}
-              <div style={{ fontSize: 9.5, color: "var(--text-faint)", marginTop: 2 }}>
-                {selectedNode.data?.category} — {selectedNode.data?.subcategory}
-                {selectedNode.data?.toolId ? ` · ${selectedNode.data.toolId}` : " · custom node"}
-              </div>
-              {selectedNode.data?.description && (
-                <div style={{ fontSize: 10, color: "var(--text-mid)", marginTop: 8, lineHeight: 1.45 }}>
-                  {selectedNode.data.description}
-                </div>
-              )}
-              {selectedNode.data?.toolId && (
-                <a
-                  href={`/tools/${selectedNode.data.toolId}`}
-                  style={{ display: "block", marginTop: 8, fontSize: 10, fontFamily: "monospace", color: "var(--accent, #00f0ff)", textDecoration: "none" }}
-                >
-                  → View in directory
-                </a>
-              )}
-              <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
-                <button
-                  onClick={() => setEditingNodeId(selectedNode.id)}
-                  style={{
-                    flex: 1,
-                    background: "transparent",
-                    border: "1px solid var(--border-bright)",
-                    color: "var(--text-mid)",
-                    borderRadius: 7,
-                    padding: "5px 8px",
-                    fontSize: 10,
-                    fontFamily: "monospace",
-                    cursor: "pointer",
-                  }}
-                >
-                  ✎ Rename
-                </button>
-                <button
-                  onClick={deleteSelected}
-                  style={{
-                    flex: 1,
-                    background: "transparent",
-                    border: "1px solid var(--danger, #ef4444)",
-                    color: "var(--danger, #ef4444)",
-                    borderRadius: 7,
-                    padding: "5px 8px",
-                    fontSize: 10,
-                    fontFamily: "monospace",
-                    cursor: "pointer",
-                  }}
-                >
-                  ✕ Delete
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Edge panel */}
-          {selectedEdge && (
-            <div
-              style={{
-                position: "absolute",
-                top: 12,
-                right: 12,
-                zIndex: 30,
-                width: 230,
-                background: "var(--surface-2)",
-                border: "1px solid var(--border-bright)",
-                borderRadius: 12,
-                padding: 12,
-                boxShadow: "0 12px 32px rgba(0,0,0,0.3)",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <span style={{ fontSize: 10, fontFamily: "monospace", fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: "var(--text-mid)" }}>
-                  Connection
-                </span>
-                <button
-                  onClick={() => {
-                    setEdges((eds) => eds.map((e) => (e.selected ? { ...e, selected: false } : e)));
-                  }}
-                  style={{ background: "none", border: "none", color: "var(--text-faint)", cursor: "pointer", fontSize: 12 }}
-                  aria-label="Close"
-                >
-                  ✕
-                </button>
-              </div>
-              <div style={{ fontSize: 9.5, color: "var(--text-faint)", marginBottom: 6 }}>
-                {nodes.find((n) => n.id === selectedEdge.source)?.data?.label || "?"} →{" "}
-                {nodes.find((n) => n.id === selectedEdge.target)?.data?.label || "?"}
-              </div>
-              <input
-                defaultValue={selectedEdge.label || ""}
-                placeholder="label (e.g. results)"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") renameEdge(selectedEdge.id, e.target.value);
-                  if (e.key === "Escape") setEdgePanelId(null);
-                }}
-                onBlur={(e) => renameEdge(selectedEdge.id, e.target.value)}
-                style={{
-                  width: "100%",
-                  background: "var(--surface-1)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 6,
-                  padding: "5px 8px",
-                  color: "var(--text-strong)",
-                  fontFamily: "monospace",
-                  fontSize: 10.5,
-                  outline: "none",
-                  marginBottom: 8,
-                }}
-              />
-              <button
-                onClick={() => deleteEdge(selectedEdge.id)}
-                style={{
-                  width: "100%",
-                  background: "transparent",
-                  border: "1px solid var(--danger, #ef4444)",
-                  color: "var(--danger, #ef4444)",
-                  borderRadius: 7,
-                  padding: "5px 8px",
-                  fontSize: 10,
-                  fontFamily: "monospace",
-                  cursor: "pointer",
-                }}
-              >
-                ✕ Delete connection
-              </button>
             </div>
           )}
         </div>
 
-        {/* Advisor panel */}
+        {/* Right sidebar: Advisor panel */}
         {advisorOpen && (
           <CanvasAdvisor
             nodes={nodes}
@@ -1120,18 +1112,6 @@ function CanvasInner() {
     </div>
   );
 }
-
-const GOAL_CARDS = [
-  { id: "research", emoji: "🔍", title: "Research" },
-  { id: "content", emoji: "✍️", title: "Content" },
-  { id: "code", emoji: "⌨️", title: "Code" },
-  { id: "images", emoji: "🎨", title: "Images" },
-  { id: "voice", emoji: "🎙️", title: "Voice" },
-  { id: "data", emoji: "📊", title: "Data" },
-  { id: "agents", emoji: "🤖", title: "Agents" },
-  { id: "local", emoji: "🏠", title: "Local AI" },
-  { id: "app", emoji: "🏗️", title: "AI App" },
-];
 
 export default function CanvasEditor() {
   return (
