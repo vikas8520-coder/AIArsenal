@@ -394,27 +394,170 @@ function getRecommendedTools(role, presentRoles) {
   const recommended = roleTools.filter(t => !presentRoles.has(getToolRole(t))).slice(0, 3);
   return [...onCanvas, ...recommended];
 }
-
+// Generate Mermaid diagram - hub-and-spoke from orchestrator
 function generateMermaid(layers) {
   let mermaid = 'graph TD\n';
   let nodeId = 0;
-  const layerNodes = [];
   
-  for (const layer of layers) {
-    const tools = layer.tools || [];
-    const label = layer.name + (layer.recommended ? ' ⭐' : '');
-    mermaid += `  subgraph "${label}"\n`;
+  // Find the orchestrator layer (first layer with ORCHESTRATOR role or parallel LLM)
+  const orchestratorLayer = layers.find(l => 
+    l.role === 'ORCHESTRATOR' || 
+    l.roles?.includes('ORCHESTRATOR') || 
+    l.name.includes('Orchestration')
+  );
+  
+  // Find persistence layer
+  const persistenceLayer = layers.find(l => 
+    l.roles?.includes('BACKEND_DB') || 
+    l.roles?.includes('VECTOR_DB') ||
+    l.name.includes('Persistence')
+  );
+  
+  // Find LLM serving layer
+  const llmLayer = layers.find(l => 
+    l.parallel === true ||
+    l.roles?.some(r => ['LLM_SERVING_DEV', 'LLM_SERVING_PROD', 'LLM_API'].includes(r))
+  );
+  
+  // Find input layer
+  const inputLayer = layers.find(l => 
+    l.roles?.some(r => ['SPEECH_TO_TEXT', 'SCRAPING', 'TEXT_TO_SPEECH'].includes(r))
+  );
+  
+  // Find observability layer
+  const obsLayer = layers.find(l => 
+    l.roles?.includes('MONITORING') ||
+    l.name.includes('Observability')
+  );
+  
+  // Build nodes by layer
+  const layerNodeIds = {};
+  
+  // Orchestrator (center)
+  if (orchestratorLayer) {
+    const tools = orchestratorLayer.tools || [];
+    layerNodeIds.orchestrator = [];
+    mermaid += `  subgraph "${orchestratorLayer.name}"\n`;
     for (const tool of tools) {
       const id = `n${nodeId++}`;
       mermaid += `    ${id}["${tool}"]\n`;
-      layerNodes.push(id);
+      layerNodeIds.orchestrator.push(id);
     }
     mermaid += `  end\n`;
   }
   
-  // Connect layers (top to bottom)
-  for (let i = 0; i < layerNodes.length - 1; i++) {
-    mermaid += `  ${layerNodes[i]} --> ${layerNodes[i + 1]}\n`;
+  // LLM Serving (parallel - left of orchestrator)
+  if (llmLayer) {
+    const tools = llmLayer.tools || [];
+    layerNodeIds.llm = [];
+    mermaid += `  subgraph "${llmLayer.name}"\n`;
+    for (const tool of tools) {
+      const id = `n${nodeId++}`;
+      mermaid += `    ${id}["${tool}"]\n`;
+      layerNodeIds.llm.push(id);
+    }
+    mermaid += `  end\n`;
+  }
+  
+  // Input Processing (right of orchestrator)
+  if (inputLayer) {
+    const tools = inputLayer.tools || [];
+    layerNodeIds.input = [];
+    mermaid += `  subgraph "${inputLayer.name}"\n`;
+    for (const tool of tools) {
+      const id = `n${nodeId++}`;
+      mermaid += `    ${id}["${tool}"]\n`;
+      layerNodeIds.input.push(id);
+    }
+    mermaid += `  end\n`;
+  }
+  
+  // Persistence (bottom)
+  if (persistenceLayer) {
+    const tools = persistenceLayer.tools || [];
+    layerNodeIds.persistence = [];
+    mermaid += `  subgraph "${persistenceLayer.name}"\n`;
+    for (const tool of tools) {
+      const id = `n${nodeId++}`;
+      mermaid += `    ${id}["${tool}"]\n`;
+      layerNodeIds.persistence.push(id);
+    }
+    mermaid += `  end\n`;
+  }
+  
+  // Observability (bottom right)
+  if (obsLayer) {
+    const tools = obsLayer.tools || [];
+    layerNodeIds.obs = [];
+    mermaid += `  subgraph "${obsLayer.name}"\n`;
+    for (const tool of tools) {
+      const id = `n${nodeId++}`;
+      mermaid += `    ${id}["${tool}"]\n`;
+      layerNodeIds.obs.push(id);
+    }
+    mermaid += `  end\n`;
+  }
+  
+  // Hub-and-spoke connections from orchestrator
+  const orchestratorIds = layerNodeIds.orchestrator || [];
+  const llmIds = layerNodeIds.llm || [];
+  const inputIds = layerNodeIds.input || [];
+  const persistenceIds = layerNodeIds.persistence || [];
+  const obsIds = layerNodeIds.obs || [];
+  
+  // Orchestrator calls LLM serving (parallel)
+  if (orchestratorIds.length > 0 && llmIds.length > 0) {
+    for (const o of orchestratorIds) {
+      for (const l of llmIds) {
+        mermaid += `  ${o} --> ${l}\n`;
+      }
+    }
+  }
+  
+  // Orchestrator calls Input processors
+  if (orchestratorIds.length > 0 && inputIds.length > 0) {
+    for (const o of orchestratorIds) {
+      for (const i of inputIds) {
+        mermaid += `  ${o} --> ${i}\n`;
+      }
+    }
+  }
+  
+  // Orchestrator writes to Persistence
+  if (orchestratorIds.length > 0 && persistenceIds.length > 0) {
+    for (const o of orchestratorIds) {
+      for (const p of persistenceIds) {
+        mermaid += `  ${o} --> ${p}\n`;
+      }
+    }
+  }
+  
+  // Input processors also write to Persistence
+  if (inputIds.length > 0 && persistenceIds.length > 0) {
+    for (const i of inputIds) {
+      for (const p of persistenceIds) {
+        mermaid += `  ${i} --> ${p}\n`;
+      }
+    }
+  }
+  
+  // LLM serving can also write to Persistence
+  if (llmIds.length > 0 && persistenceIds.length > 0) {
+    for (const l of llmIds) {
+      for (const p of persistenceIds) {
+        mermaid += `  ${l} --> ${p}\n`;
+      }
+    }
+  }
+  
+  // Observability watches everything
+  if (obsIds.length > 0) {
+    const allIds = [...orchestratorIds, ...llmIds, ...inputIds, ...persistenceIds];
+    for (const o of obsIds) {
+      for (const a of allIds) {
+        mermaid += `  ${a} -.-> ${o}\n`;  // dotted line for monitoring
+      }
+    }
   }
   
   return mermaid;
