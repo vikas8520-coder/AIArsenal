@@ -253,6 +253,61 @@ function CanvasInner() {
     showToast("Canvas exported as JSON");
   }, [nodes, edges, showToast]);
 
+  const handleExportN8n = useCallback(() => {
+    // Map canvas nodes to n8n workflow format
+    const workflow = {
+      name: "AIArsenal Canvas Workflow",
+      nodes: nodes.map((node) => ({
+        id: node.id,
+        name: node.data?.label || "Node",
+        type: "n8n-nodes-base.function", // Generic function node - user customizes
+        typeVersion: 1,
+        position: [Math.round(node.position.x), Math.round(node.position.y)],
+        parameters: {
+          functionCode: `// Tool: ${node.data?.label}\n// Category: ${node.data?.category}\n// Subcategory: ${node.data?.subcategory}\n// Tool ID: ${node.data?.toolId || "custom"}\n// Description: ${node.data?.description || ""}\n// Pricing: ${node.data?.pricing || "Unknown"}\n// URL: ${node.data?.url || ""}\n\n// TODO: Implement this tool's logic\nreturn items;`,
+        },
+      })),
+      connections: edges.reduce((acc, edge) => {
+        if (!acc[edge.source]) acc[edge.source] = { main: [[]] };
+        acc[edge.source].main[0].push({
+          node: edge.target,
+          type: "main",
+          index: 0,
+        });
+        return acc;
+      }, {}),
+    };
+
+    const blob = new Blob([JSON.stringify(workflow, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `aiarsenal-n8n-workflow-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast("Exported n8n workflow — import in n8n (each node is a Function node, customize logic)");
+  }, [nodes, edges, showToast]);
+
+  const handleShare = useCallback(() => {
+    // Encode canvas state as base64 URL parameter
+    const state = {
+      nodes,
+      edges,
+      activeGoal,
+      timestamp: Date.now(),
+    };
+    const encoded = btoa(JSON.stringify(state));
+    const url = `${window.location.origin}/canvas?state=${encoded}`;
+    
+    navigator.clipboard.writeText(url).then(() => {
+      showToast("Share URL copied to clipboard!");
+    }).catch(() => {
+      // Fallback
+      prompt("Copy this URL:", url);
+      showToast("Share URL ready to copy");
+    });
+  }, [nodes, edges, activeGoal, showToast]);
+
   const handleClear = useCallback(() => {
     setNodes([]);
     setEdges([]);
@@ -421,6 +476,7 @@ function CanvasInner() {
         edgeCount={edges.length}
         onClear={handleClear}
         onExport={handleExport}
+        onExportN8n={handleExportN8n}
         onSave={handleSave}
         onLoadTemplate={() => setTemplateOpen((v) => !v)}
         onFitView={handleFitView}
@@ -428,6 +484,7 @@ function CanvasInner() {
         onToggleAdvisor={() => setAdvisorOpen((v) => !v)}
         onUndo={undo}
         onRedo={redo}
+        onShare={handleShare}
         canUndo={canUndo}
         canRedo={canRedo}
         advisorOpen={advisorOpen}

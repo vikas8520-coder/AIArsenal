@@ -10,14 +10,16 @@ export default function CanvasToolbar({
   edgeCount,
   onClear,
   onExport,
+  onExportN8n,
   onSave,
   onLoadTemplate,
   onFitView,
   onAutoLayout,
   onToggleAdvisor,
-  advisorOpen,
   onUndo,
   onRedo,
+  onShare,
+  advisorOpen,
   canUndo,
   canRedo,
   saveState = "idle",
@@ -76,6 +78,12 @@ export default function CanvasToolbar({
         </button>
         <button onClick={onExport} title="Export canvas as JSON" style={btnStyle}>
           ⇩ Export
+        </button>
+        <button onClick={onExportN8n} title="Export as n8n workflow" style={btnStyle}>
+          ⤷ n8n
+        </button>
+        <button onClick={onShare} title="Share canvas (copies URL)" style={btnStyle}>
+          ⧉ Share
         </button>
         <button onClick={onToggleAdvisor} title="Toggle advisor panel" style={{ ...btnStyle, ...(advisorOpen ? { color: "var(--accent, #00f0ff)" } : {}) }}>
           💡 Advisor
