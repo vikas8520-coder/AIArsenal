@@ -163,7 +163,7 @@ export default function CanvasAdvisor({ nodes, edges, onApplyGoal, onAddTool, ac
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: 10 }}>
-        {view === "goals" ? (
+        {view === "goals" && (
           <div>
             <div style={{ fontSize: 10, color: "var(--text-faint)", lineHeight: 1.4, marginBottom: 8, padding: "0 2px" }}>
               What are you trying to build? Pick a goal — we'll lay out the right stack and suggest upgrades.
@@ -207,7 +207,8 @@ export default function CanvasAdvisor({ nodes, edges, onApplyGoal, onAddTool, ac
               );
             })}
           </div>
-        ) : (
+        )}
+        {view === "advice" && (
           <div>
             <div style={{ fontSize: 10, color: "var(--text-faint)", lineHeight: 1.4, marginBottom: 8, padding: "0 2px" }}>
               Live analysis of your canvas. {activeGoalObj ? `Goal: ${activeGoalObj.title}.` : "Pick a goal to get goal-specific advice."}

@@ -99,20 +99,43 @@ export default function MermaidDiagram({ mermaidCode }) {
     );
   }
 
-  return (
-    <div 
-      ref={containerRef} 
-      style={{ 
-        minHeight: 300,
-        background: "var(--surface-1)",
-        border: "1px solid var(--border)",
-        borderRadius: 8,
-        padding: 12,
-        overflow: "auto",
-      }}
-      dangerouslySetInnerHTML={{ __html: svgContent || "" }}
-    >
-      {!svgContent && (
+  if (!mermaidCode) {
+    return (
+      <div
+        style={{
+          minHeight: 300,
+          background: "var(--surface-1)",
+          border: "1px solid var(--border)",
+          borderRadius: 8,
+          padding: 12,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div style={{ color: "var(--text-faint)", fontSize: 12, fontFamily: "monospace" }}>
+          No architecture diagram available.
+        </div>
+      </div>
+    );
+  }
+
+  // NOTE: dangerouslySetInnerHTML and children are mutually exclusive in React
+  // (error #60). Render the placeholder WITHOUT dangerouslySetInnerHTML until
+  // the SVG is ready, then render the SVG-only div.
+  if (!svgContent) {
+    return (
+      <div
+        ref={containerRef}
+        style={{
+          minHeight: 300,
+          background: "var(--surface-1)",
+          border: "1px solid var(--border)",
+          borderRadius: 8,
+          padding: 12,
+          overflow: "auto",
+        }}
+      >
         <div style={{ 
           color: "var(--text-faint)", 
           fontSize: 12, 
@@ -122,7 +145,22 @@ export default function MermaidDiagram({ mermaidCode }) {
         }}>
           Rendering architecture diagram...
         </div>
-      )}
-    </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        minHeight: 300,
+        background: "var(--surface-1)",
+        border: "1px solid var(--border)",
+        borderRadius: 8,
+        padding: 12,
+        overflow: "auto",
+      }}
+      dangerouslySetInnerHTML={{ __html: svgContent }}
+    />
   );
 }
