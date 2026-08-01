@@ -159,6 +159,16 @@ export const CATEGORIES = [
     desc: "Model Context Protocol servers — connect AI agents to databases, APIs, files, browsers, and 1000+ services. Free and paid options.",
     mood: "Connected, extensible",
   },
+  {
+    id: "Git Repos",
+    label: "Git Repos",
+    icon: "⟐",
+    color: "#f59e0b",
+    orb1: "#f59e0b",
+    orb2: "#ef4444",
+    desc: "The most starred, trusted, and useful GitHub repositories — hand-picked by stars, community adoption, and real-world value.",
+    mood: "Community, foundational",
+  },
 ];
 
 export const getCategoryById = (id) =>
