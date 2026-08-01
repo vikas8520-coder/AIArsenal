@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Mermaid Diagram Renderer
@@ -7,10 +7,13 @@ import { useEffect, useRef } from "react";
  */
 export default function MermaidDiagram({ mermaidCode }) {
   const containerRef = useRef(null);
-  const renderedRef = useRef(false);
+  const [svgContent, setSvgContent] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    if (renderedRef.current || !mermaidCode || !containerRef.current) return;
+    if (!mermaidCode || !containerRef.current) return;
+    
+    let cancelled = false;
     
     const renderMermaid = async () => {
       try {
@@ -62,16 +65,39 @@ export default function MermaidDiagram({ mermaidCode }) {
           },
         });
 
-        await mermaid.default.render("architecture-diagram", mermaidCode, containerRef.current);
-        renderedRef.current = true;
-      } catch (error) {
-        console.error("Mermaid render error:", error);
-        containerRef.current.innerHTML = `<pre style="color: #ef4444; font-size: 11px;">Failed to render diagram: ${error.message}</pre>`;
+        const { svg } = await mermaid.default.render("architecture-diagram", mermaidCode);
+        if (!cancelled) {
+          setSvgContent(svg);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message);
+        }
       }
     };
 
     renderMermaid();
+    
+    return () => {
+      cancelled = true;
+    };
   }, [mermaidCode]);
+
+  if (error) {
+    return (
+      <div style={{ 
+        color: "#ef4444", 
+        fontSize: 11, 
+        fontFamily: "monospace",
+        padding: 12,
+        background: "var(--surface-1)",
+        border: "1px solid var(--border)",
+        borderRadius: 8,
+      }}>
+        Failed to render diagram: {error}
+      </div>
+    );
+  }
 
   return (
     <div 
@@ -84,8 +110,9 @@ export default function MermaidDiagram({ mermaidCode }) {
         padding: 12,
         overflow: "auto",
       }}
+      dangerouslySetInnerHTML={{ __html: svgContent || "" }}
     >
-      {!renderedRef.current && (
+      {!svgContent && (
         <div style={{ 
           color: "var(--text-faint)", 
           fontSize: 12, 

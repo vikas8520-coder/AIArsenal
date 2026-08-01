@@ -365,7 +365,7 @@ export function goalToFlow(goal) {
   const nodes = goal.stack.map((toolId, i) => ({
     id: `g-${toolId}-${i}`,
     type: "tool",
-    position: { x: i * 280, y: 0 },
+    position: { x: i * 280 + 80, y: 100 },
     data: {
       label: toolNameById[toolId] || toolId,
       toolId,
