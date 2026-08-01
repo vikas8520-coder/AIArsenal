@@ -15,6 +15,10 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import ToolNode from "./ToolNode";
+import TriggerNode from "./TriggerNode";
+import ConditionNode from "./ConditionNode";
+import ActionNode from "./ActionNode";
+import OutputNode from "./OutputNode";
 import CanvasSidebar from "./CanvasSidebar";
 import CanvasToolbar from "./CanvasToolbar";
 import CanvasAdvisor from "./CanvasAdvisor";
@@ -28,7 +32,49 @@ const STORAGE_KEY = "aiarsenal-canvas-v1";
 // Register directory tool info so goalToFlow builds real nodes.
 TOOLS.forEach(registerToolInfo);
 
-const nodeTypes = { tool: ToolNode };
+/** Flow control node types for the canvas palette */
+const FLOW_NODES = [
+  {
+    type: "trigger",
+    label: "Trigger",
+    subcategory: "Start workflow",
+    desc: "Start workflow — cron, webhook, or manual",
+    icon: "⚡",
+    color: "#3b82f6",
+  },
+  {
+    type: "condition",
+    label: "Condition",
+    subcategory: "If / else branch",
+    desc: "Branch flow based on condition",
+    icon: "⌘",
+    color: "#f59e0b",
+  },
+  {
+    type: "action",
+    label: "Action",
+    subcategory: "Perform action",
+    desc: "Perform action — API call, send email, run script",
+    icon: "➤",
+    color: "#22c55e",
+  },
+  {
+    type: "output",
+    label: "Output",
+    subcategory: "Final output",
+    desc: "Final output — email, file, notification, webhook",
+    icon: "📤",
+    color: "#a855f7",
+  },
+];
+
+const nodeTypes = { 
+  tool: ToolNode,
+  trigger: TriggerNode,
+  condition: ConditionNode,
+  action: ActionNode,
+  output: OutputNode,
+};
 
 const defaultEdgeOptions = {
   animated: false,
@@ -199,25 +245,47 @@ function CanvasInner() {
       const raw = e.dataTransfer.getData("application/aiarsenal-tool");
       if (!raw) return;
       try {
-        const tool = JSON.parse(raw);
+        const payload = JSON.parse(raw);
         const position = screenToFlowPosition({ x: e.clientX, y: e.clientY });
-        const id = `tool-${tool.toolId || Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-        const newNode = {
-          id,
-          type: "tool",
-          position,
-          data: {
-            label: tool.name,
-            category: tool.category,
-            subcategory: tool.subcategory,
-            description: tool.description,
-            pricing: tool.pricing,
-            toolId: tool.toolId,
-            url: tool.url,
-          },
-        };
-        setNodes((nds) => [...nds, newNode]);
-        showToast(`Added ${tool.name} to canvas`);
+        
+        // Handle flow control nodes (no toolId, but has nodeType)
+        if (payload.nodeType) {
+          const id = `${payload.nodeType}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+          const newNode = {
+            id,
+            type: payload.nodeType, // trigger, condition, action, output
+            position,
+            data: {
+              label: payload.name,
+              subcategory: payload.subcategory,
+              description: payload.description,
+              pricing: payload.pricing,
+              color: payload.color,
+            },
+          };
+          setNodes((nds) => [...nds, newNode]);
+          showToast(`Added ${payload.name} to canvas`);
+        } else {
+          // Regular tool from directory
+          const tool = payload;
+          const id = `tool-${tool.toolId || Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+          const newNode = {
+            id,
+            type: "tool",
+            position,
+            data: {
+              label: tool.name,
+              category: tool.category,
+              subcategory: tool.subcategory,
+              description: tool.description,
+              pricing: tool.pricing,
+              toolId: tool.toolId,
+              url: tool.url,
+            },
+          };
+          setNodes((nds) => [...nds, newNode]);
+          showToast(`Added ${tool.name} to canvas`);
+        }
       } catch {
         /* bad payload */
       }
@@ -368,6 +436,31 @@ function CanvasInner() {
       };
       setNodes((nds) => [...nds, newNode]);
       showToast(`Added ${tool.name}`);
+    },
+    [nodes, showToast]
+  );
+
+  // Add flow control nodes (trigger, condition, action, output)
+  const addFlowNode = useCallback(
+    (nodeType) => {
+      const flowNode = FLOW_NODES.find((n) => n.type === nodeType);
+      if (!flowNode) return;
+      const existing = nodes.filter((n) => n.type === nodeType).length;
+      const id = `${nodeType}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      const newNode = {
+        id,
+        type: nodeType, // trigger, condition, action, output
+        position: { x: 80 + existing * 40, y: 80 + existing * 40 },
+        data: {
+          label: flowNode.label,
+          subcategory: flowNode.subcategory,
+          description: flowNode.desc,
+          pricing: "Free",
+          color: flowNode.color,
+        },
+      };
+      setNodes((nds) => [...nds, newNode]);
+      showToast(`Added ${flowNode.label}`);
     },
     [nodes, showToast]
   );
