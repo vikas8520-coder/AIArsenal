@@ -3,10 +3,10 @@ import { useMemo, useState } from "react";
 import { GOALS, analyzeCanvas, getGoal, toolNameById, toolCategoryById } from "@/src/data/goals";
 
 const TYPE_STYLE = {
-  ok: { color: "#22c55e", icon: "✓", bg: "#22c55e10" },
-  info: { color: "#3b82f6", icon: "ℹ", bg: "#3b82f610" },
-  warn: { color: "#f59e0b", icon: "!", bg: "#f59e0b10" },
-  tip: { color: "#a78bfa", icon: "→", bg: "#a78bfa10" },
+  ok: { color: "#16a34a", icon: "✓", bg: "#dcfce7" },   // dark green on light green
+  info: { color: "#1d4ed8", icon: "ℹ", bg: "#dbeafe" },  // dark blue on light blue
+  warn: { color: "#b45309", icon: "!", bg: "#fef3c7" },  // dark amber on light amber
+  tip: { color: "#7c3aed", icon: "→", bg: "#ede9fe" },   // dark purple on light purple
 };
 
 /**
@@ -141,7 +141,7 @@ export default function CanvasAdvisor({ nodes, edges, onApplyGoal, onAddTool, ac
                       </div>
                     </div>
                     {hasStack ? (
-                      <span style={{ fontSize: 9, color: "#22c55e", flexShrink: 0 }}>✓ on canvas</span>
+                      <span style={{ fontSize: 9, color: "#16a34a", flexShrink: 0 }}>✓ on canvas</span>
                     ) : (
                       <span style={{ fontSize: 9, color: "var(--text-faint)", flexShrink: 0 }}>{g.stack.length} tools</span>
                     )}
