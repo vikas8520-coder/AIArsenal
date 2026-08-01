@@ -1074,7 +1074,7 @@ function CanvasInner() {
           )}
         </div>
 
-        {/* Right sidebar: Advisor panel */}
+        {/* Right sidebar: Advisor panel - OUTSIDE the canvas div */}
         {advisorOpen && (
           <CanvasAdvisor
             nodes={nodes}
