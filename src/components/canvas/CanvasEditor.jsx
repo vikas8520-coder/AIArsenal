@@ -147,11 +147,22 @@ function CanvasInner() {
   const canUndo = history.past.length > 0;
   const canRedo = history.future.length > 0;
 
-  const { screenToFlowPosition, fitView } = useReactFlow();
+  const { screenToFlowPosition, fitView, getViewport, setViewport } = useReactFlow();
   const savedNodesRef = useRef(nodes);
   const savedEdgesRef = useRef(edges);
   const saveTimer = useRef(null);
   const didInit = useRef(false);
+  const viewportRef = useRef({ x: 0, y: 0, zoom: 1 });
+
+  const saveToStorage = useCallback(() => {
+    try {
+      const vp = getViewport();
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ nodes: savedNodesRef.current, edges: savedEdgesRef.current, viewport: vp })
+      );
+    } catch { /* storage full */ }
+  }, [getViewport]);
 
   const cmdS = useKeyPress(["meta+s", "ctrl+s"]);
 
@@ -165,6 +176,9 @@ function CanvasInner() {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed.nodes)) setNodes(parsed.nodes);
         if (Array.isArray(parsed.edges)) setEdges(parsed.edges);
+        if (parsed.viewport) {
+          setViewport(parsed.viewport, { duration: 0 });
+        }
       }
     } catch {
       /* ignore corrupt storage */
@@ -176,15 +190,9 @@ function CanvasInner() {
     savedNodesRef.current = nodes;
     savedEdgesRef.current = edges;
     clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ nodes, edges }));
-      } catch {
-        /* storage full — ignore */
-      }
-    }, 400);
+    saveTimer.current = setTimeout(saveToStorage, 400);
     return () => clearTimeout(saveTimer.current);
-  }, [nodes, edges]);
+  }, [nodes, edges, saveToStorage]);
 
   // ── Cmd+S / Ctrl+S saves ──
   useEffect(() => {
@@ -439,8 +447,10 @@ function CanvasInner() {
     setNodes([]);
     setEdges([]);
     setActiveGoal(null);
+    viewportRef.current = { x: 0, y: 0, zoom: 1 };
+    setViewport({ x: 0, y: 0, zoom: 1 }, { duration: 200 });
     showToast("Canvas cleared");
-  }, [showToast]);
+  }, [showToast, setNodes, setEdges, setActiveGoal]);
 
   const handleFitView = useCallback(() => {
     fitView({ padding: 0.2, duration: 400 });
@@ -785,13 +795,16 @@ function CanvasInner() {
 
         {/* Center: React Flow canvas */}
         <div style={{ flex: 1, position: "relative", width: "100%", height: "100%" }}>
-          <ReactFlowProvider>
             <ReactFlow
               nodes={nodes}
               edges={edges}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
+              onMoveEnd={() => {
+                clearTimeout(saveTimer.current);
+                saveTimer.current = setTimeout(saveToStorage, 400);
+              }}
               onDragOver={onDragOver}
               onDrop={onDrop}
               nodeTypes={nodeTypes}
@@ -834,7 +847,6 @@ function CanvasInner() {
                 style={{ background: "var(--surface-1)" }}
               />
             </ReactFlow>
-          </ReactFlowProvider>
 
           {/* Node properties panel */}
           {selectedNode && (
