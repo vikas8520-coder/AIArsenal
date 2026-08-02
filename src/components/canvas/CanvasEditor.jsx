@@ -1076,11 +1076,6 @@ function CanvasInner() {
 
         {/* Right sidebar: Advisor panel - OUTSIDE the canvas div */}
         {advisorOpen && (
-          <div style={{ width: 280, flexShrink: 0, background: "red", borderLeft: "1px solid var(--border)" }}>
-            ADVISOR PANEL MOUNTED
-          </div>
-        )}
-        {advisorOpen && (
           <CanvasAdvisor
             nodes={nodes}
             edges={edges}
